@@ -1,0 +1,192 @@
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { z } from "zod";
+
+export const Route = createFileRoute("/auth")({
+  head: () => ({ meta: [{ title: "Sign in — Hearth" }] }),
+  component: AuthPage,
+});
+
+const emailSchema = z.string().trim().email("Enter a valid email").max(255);
+const passwordSchema = z.string().min(8, "At least 8 characters").max(72);
+const nameSchema = z.string().trim().min(1, "Required").max(80);
+
+function AuthPage() {
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/app" });
+    });
+  }, [navigate]);
+
+  async function handleEmail(e: React.FormEvent) {
+    e.preventDefault();
+    const ep = emailSchema.safeParse(email);
+    const pp = passwordSchema.safeParse(password);
+    if (!ep.success) return toast.error(ep.error.issues[0].message);
+    if (!pp.success) return toast.error(pp.error.issues[0].message);
+    if (mode === "signup") {
+      const np = nameSchema.safeParse(fullName);
+      if (!np.success) return toast.error(np.error.issues[0].message);
+    }
+    setLoading(true);
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/app`,
+            data: { full_name: fullName },
+          },
+        });
+        if (error) throw error;
+        toast.success("Welcome! Check your email to confirm.");
+        navigate({ to: "/app" });
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        navigate({ to: "/app" });
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setOauthLoading(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + "/app",
+    });
+    if (result.error) {
+      toast.error("Google sign-in failed");
+      setOauthLoading(false);
+      return;
+    }
+    if (result.redirected) return;
+    navigate({ to: "/app" });
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-b from-secondary via-background to-background">
+      <Link to="/" className="flex items-center gap-2 mb-8 text-foreground">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+          <CalendarIcon className="h-5 w-5" />
+        </span>
+        <span className="font-display text-2xl font-semibold">Hearth</span>
+      </Link>
+      <Card className="w-full max-w-md p-7 shadow-lg border-border/70">
+        <div className="mb-6 text-center">
+          <h1 className="font-display text-2xl font-semibold">
+            {mode === "signin" ? "Welcome back" : "Create your account"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {mode === "signin" ? "Sign in to your shared calendars" : "Start planning together in seconds"}
+          </p>
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full h-11"
+          onClick={handleGoogle}
+          disabled={oauthLoading || loading}
+        >
+          {oauthLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
+          <span className="ml-2">Continue with Google</span>
+        </Button>
+
+        <div className="flex items-center gap-3 my-5">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">or</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        <form onSubmit={handleEmail} className="space-y-3">
+          {mode === "signup" && (
+            <div>
+              <Label htmlFor="name">Full name</Label>
+              <Input
+                id="name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Jordan Rivera"
+                autoComplete="name"
+                maxLength={80}
+              />
+            </div>
+          )}
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              autoComplete="email"
+              maxLength={255}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 8 characters"
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              minLength={8}
+              maxLength={72}
+              required
+            />
+          </div>
+          <Button type="submit" className="w-full h-11 mt-2" disabled={loading || oauthLoading}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === "signin" ? "Sign in" : "Create account"}
+          </Button>
+        </form>
+
+        <p className="mt-5 text-center text-sm text-muted-foreground">
+          {mode === "signin" ? "New to Hearth?" : "Already have an account?"}{" "}
+          <button
+            type="button"
+            className="text-primary font-medium hover:underline"
+            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+          >
+            {mode === "signin" ? "Create one" : "Sign in"}
+          </button>
+        </p>
+      </Card>
+    </div>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.76h3.56c2.08-1.92 3.28-4.74 3.28-8.09Z"/>
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.76c-.99.66-2.25 1.05-3.72 1.05-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/>
+      <path fill="#FBBC05" d="M5.84 14.1A6.6 6.6 0 0 1 5.48 12c0-.73.13-1.44.36-2.1V7.06H2.18A11 11 0 0 0 1 12c0 1.77.42 3.45 1.18 4.94l3.66-2.84Z"/>
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.07.56 4.21 1.64l3.16-3.16C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"/>
+    </svg>
+  );
+}
