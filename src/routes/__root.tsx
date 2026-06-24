@@ -127,9 +127,18 @@ function RootComponent() {
     import("@/integrations/supabase/client").then(({ supabase }) => {
       if (!mounted) return;
       const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-        router.invalidate();
-        if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+        if (event === "SIGNED_OUT") {
+          // A sign-out (here or in another tab) must re-run the auth guards.
+          router.invalidate();
+          return;
+        }
+        if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+          // Routing after sign-in is driven by the explicit navigate() in the auth
+          // flow. Invalidating the router here races with that navigation's redirect
+          // chain and leaves the target page blank until a manual refresh — so only
+          // refresh the cached data and let the navigation handle the route.
+          queryClient.invalidateQueries();
+        }
       });
       return () => sub.subscription.unsubscribe();
     });
