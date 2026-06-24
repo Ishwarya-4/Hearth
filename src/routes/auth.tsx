@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,16 +71,18 @@ function AuthPage() {
 
   async function handleGoogle() {
     setOauthLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/today",
+    // Go straight through Supabase's Google provider. (The previous Lovable OAuth
+    // broker hits /~oauth/initiate, which only exists on Lovable Cloud hosting and
+    // 404s everywhere else.) On success the browser redirects to Google and back to
+    // /today, where Supabase picks up the session from the callback URL.
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/today` },
     });
-    if (result.error) {
-      toast.error("Google sign-in failed");
+    if (error) {
+      toast.error(error.message || "Google sign-in failed");
       setOauthLoading(false);
-      return;
     }
-    if (result.redirected) return;
-    navigate({ to: "/today" });
   }
 
   return (
