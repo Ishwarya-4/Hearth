@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Wordmark } from "@/components/wordmark";
@@ -96,7 +97,7 @@ function DesktopSidebar({ userId }: { userId: string }) {
   const { space } = useSpace(userId);
 
   return (
-    <aside className="sticky top-0 hidden h-[100dvh] w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
+    <aside className="sticky top-0 z-20 hidden h-[100dvh] w-64 shrink-0 flex-col border-r border-border/40 bg-sidebar/80 backdrop-blur-xl lg:flex">
       <div className="flex h-16 items-center px-5">
         <Link to="/today" aria-label="Hearth home">
           <Wordmark size="md" />
@@ -104,10 +105,10 @@ function DesktopSidebar({ userId }: { userId: string }) {
       </div>
 
       {space && (
-        <div className="mx-4 mb-4 flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5">
+        <div className="mx-4 mb-4 flex items-center gap-2.5 rounded-xl hearth-glass px-3 py-2.5">
           <span
-            className="h-3 w-3 shrink-0 rounded-full"
-            style={{ backgroundColor: space.color }}
+            className="h-3 w-3 shrink-0 rounded-full shadow-[0_0_8px_currentColor]"
+            style={{ backgroundColor: space.color, color: space.color }}
             aria-hidden
           />
           <div className="min-w-0 flex-1">
@@ -126,17 +127,25 @@ function DesktopSidebar({ userId }: { userId: string }) {
               to={to}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
+                "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
                 active
-                  ? "bg-hearth-muted text-foreground"
+                  ? "text-foreground"
                   : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
               )}
             >
+              {/* Pill glides between nav items via shared layoutId */}
+              {active && (
+                <motion.span
+                  className="absolute inset-0 rounded-xl bg-hearth-muted"
+                  layoutId="desktop-nav-pill"
+                  transition={{ type: "spring", stiffness: 380, damping: 34 }}
+                />
+              )}
               <Icon
-                className={cn("h-[18px] w-[18px] shrink-0", active && "text-hearth")}
+                className={cn("relative z-10 h-[18px] w-[18px] shrink-0", active && "text-hearth")}
                 strokeWidth={active ? 2.25 : 1.75}
               />
-              <span className="min-w-0">
+              <span className="relative z-10 min-w-0">
                 <span className="block text-sm font-medium leading-none">{label}</span>
                 <span className="mt-0.5 block text-[11px] leading-none opacity-70">{description}</span>
               </span>
@@ -161,7 +170,7 @@ function DesktopSidebar({ userId }: { userId: string }) {
 function TabletRail({ userId }: { userId: string }) {
   const isActive = useActive();
   return (
-    <aside className="sticky top-0 hidden h-[100dvh] w-[72px] shrink-0 flex-col items-center border-r border-sidebar-border bg-sidebar py-5 md:flex lg:hidden">
+    <aside className="sticky top-0 z-20 hidden h-[100dvh] w-[72px] shrink-0 flex-col items-center border-r border-border/40 bg-sidebar/80 py-5 backdrop-blur-xl md:flex lg:hidden">
       <Link to="/today" className="mb-6" aria-label="Hearth home">
         <Wordmark size="sm" withName={false} />
       </Link>
@@ -176,11 +185,18 @@ function TabletRail({ userId }: { userId: string }) {
               aria-label={label}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex h-11 w-11 items-center justify-center rounded-xl transition-colors",
-                active ? "bg-hearth-muted text-hearth" : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
+                "relative flex h-11 w-11 items-center justify-center rounded-xl transition-colors",
+                active ? "text-hearth" : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
               )}
             >
-              <Icon className="h-5 w-5" strokeWidth={active ? 2.25 : 1.75} />
+              {active && (
+                <motion.span
+                  className="absolute inset-0 rounded-xl bg-hearth-muted"
+                  layoutId="tablet-nav-pill"
+                  transition={{ type: "spring", stiffness: 380, damping: 34 }}
+                />
+              )}
+              <Icon className="relative z-10 h-5 w-5" strokeWidth={active ? 2.25 : 1.75} />
             </Link>
           );
         })}
@@ -206,32 +222,43 @@ function MobileNav({
         to={to}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
+          "relative flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
           active ? "text-hearth" : "text-muted-foreground",
         )}
       >
-        <Icon className="h-5 w-5" strokeWidth={active ? 2.25 : 1.75} />
-        {label}
+        {active && (
+          <motion.span
+            className="absolute inset-x-1 inset-y-0.5 rounded-lg bg-hearth-muted"
+            layoutId="mobile-nav-pill"
+            transition={{ type: "spring", stiffness: 380, damping: 34 }}
+          />
+        )}
+        <Icon className="relative z-10 h-5 w-5" strokeWidth={active ? 2.25 : 1.75} />
+        <span className="relative z-10">{label}</span>
       </Link>
     );
   }
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-lg pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-4 bottom-4 z-40 md:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Main navigation"
     >
-      <div className="mx-auto flex max-w-lg items-stretch px-2">
+      <div className="mx-auto flex max-w-lg items-stretch rounded-2xl hearth-glass px-2 py-1.5 shadow-elevated">
         {left.map(tab)}
         <div className="flex flex-1 items-center justify-center">
-          <button
+          <motion.button
             type="button"
             aria-label="Quick add"
             onClick={onQuickAdd}
-            className="-mt-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-warm transition-transform active:scale-95"
+            className="-mt-5 flex h-12 w-12 items-center justify-center rounded-full btn-ember shadow-elevated"
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 500, damping: 24 }}
           >
             <Plus className="h-5 w-5" strokeWidth={2.5} />
-          </button>
+          </motion.button>
         </div>
         {right.map(tab)}
       </div>
@@ -248,7 +275,7 @@ function MobileTopBar({
 }) {
   const { space } = useSpace(userId);
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur-lg md:hidden">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/40 bg-background/80 px-4 backdrop-blur-xl md:hidden">
       <Link to="/today" aria-label="Hearth home">
         <Wordmark size="sm" withName={false} />
       </Link>
@@ -286,18 +313,19 @@ export function AppFrame({
   const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   return (
-    <div className={cn("flex bg-background", fullBleed ? "h-[100dvh] overflow-hidden" : "min-h-[100dvh]")}>
+    <div className={cn("relative flex bg-background", fullBleed ? "h-[100dvh] overflow-hidden" : "min-h-[100dvh]")}>
+      {!fullBleed && <div className="app-ambient" aria-hidden />}
       <DesktopSidebar userId={userId} />
       <TabletRail userId={userId} />
 
-      <div className={cn("flex min-w-0 flex-1 flex-col", fullBleed && "h-[100dvh]")}>
+      <div className={cn("relative z-10 flex min-w-0 flex-1 flex-col", fullBleed && "h-[100dvh]")}>
         {header ?? <MobileTopBar userId={userId} trailing={mobileTrailing} />}
         <main
           className={cn(
             fullBleed
               ? "flex min-h-0 flex-1 flex-col overflow-hidden"
               : cn(
-                  "mx-auto w-full flex-1 px-4 pb-24 pt-5 sm:px-6 md:pb-8 md:pt-8 lg:px-8",
+                  "mx-auto w-full flex-1 px-4 pb-28 pt-5 sm:px-6 md:pb-8 md:pt-8 lg:px-8",
                   maxWidth === "full" && "max-w-none",
                   maxWidth === "wide" && "max-w-7xl",
                   maxWidth === "reading" && "max-w-3xl",

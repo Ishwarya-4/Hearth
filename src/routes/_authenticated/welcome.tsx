@@ -6,6 +6,7 @@ import { Wordmark } from "@/components/wordmark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 import { ArrowRight, CalendarHeart, Heart, Home, Loader2, Mail, Plus, Sparkles, Users, X, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EVENT_COLORS } from "@/lib/calendar-utils";
@@ -171,268 +172,322 @@ function WelcomePage() {
 
   return (
     <div className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-background">
-      <div
-        className="pointer-events-none absolute -left-1/4 -top-32 h-72 w-[150%] rounded-[100%] hearth-gradient blur-2xl"
-        aria-hidden
-      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-void" aria-hidden />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-radial-ember opacity-30" aria-hidden />
 
-      <header className="relative z-10 px-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
-        <Wordmark size="sm" />
-        <ProgressDots count={STEPS.length} current={stepIndex} />
+      {/* Single-line header: wordmark + animated progress fill + step counter */}
+      <header className="relative z-10 flex items-center gap-3 px-5 pt-[max(0.875rem,env(safe-area-inset-top))] pb-3">
+        <Wordmark size="sm" className="shrink-0" />
+        <div className="flex-1 h-[3px] overflow-hidden rounded-full bg-border/50">
+          <motion.div
+            className="h-full rounded-full bg-hearth"
+            animate={{ width: `${((stepIndex + 1) / STEPS.length) * 100}%` }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          />
+        </div>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{stepIndex + 1}/{STEPS.length}</span>
       </header>
 
-      <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-6">
+      {/* Main: flex col so each step can push its button to the bottom with mt-auto */}
+      <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+
         {step === "type" && (
-          <div>
-            <p className="text-overline text-hearth">Welcome to Hearth</p>
-            <h1 className="mt-2 font-display text-display">
-              Who are you sharing<br />life with?
-            </h1>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Hearth is a warm, shared calendar — for the people you want to stay close to.
-            </p>
-
-            <div className="mt-7 grid grid-cols-2 gap-3">
-              {SPACE_TYPES.map(({ key, label, note, icon: Icon }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => { setSpaceType(key); setName(""); }}
-                  aria-pressed={spaceType === key}
-                  className={cn(
-                    "flex flex-col items-start gap-2 rounded-3xl border bg-card p-4 text-left transition-all active:scale-[0.98]",
-                    spaceType === key ? "border-primary/60 ring-2 ring-primary/20" : "border-border/60 hover:border-primary/30",
-                  )}
-                >
-                  <span className={cn("inline-flex h-10 w-10 items-center justify-center rounded-2xl", spaceType === key ? "bg-primary text-primary-foreground" : "bg-accent text-primary")}>
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <span className="text-sm font-semibold">{label}</span>
-                  <span className="text-xs text-muted-foreground">{note}</span>
-                </button>
-              ))}
+          <div className="flex flex-1 flex-col">
+            <div>
+              <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-tight">
+                Who are you<br />sharing life with?
+              </h1>
+              <div className="mt-4 grid grid-cols-2 gap-2.5">
+                {SPACE_TYPES.map(({ key, label, note, icon: Icon }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => { setSpaceType(key); setName(""); }}
+                    aria-pressed={spaceType === key}
+                    className={cn(
+                      "flex flex-col items-start gap-1.5 rounded-2xl border p-3.5 text-left transition-all active:scale-[0.97]",
+                      spaceType === key
+                        ? "border-primary/50 bg-primary/5 ring-2 ring-primary/20"
+                        : "border-border/60 bg-card hover:border-primary/30",
+                    )}
+                  >
+                    <span className={cn(
+                      "inline-flex h-9 w-9 items-center justify-center rounded-xl",
+                      spaceType === key ? "bg-primary text-primary-foreground" : "bg-accent text-primary",
+                    )}>
+                      <Icon className="h-4.5 w-4.5" />
+                    </span>
+                    <span className="text-sm font-semibold">{label}</span>
+                    <span className="text-xs leading-snug text-muted-foreground">{note}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-
-            <Button size="lg" className="mt-7 w-full" onClick={() => setStep("space")}>
-              Continue <ArrowRight className="h-4 w-4" />
-            </Button>
+            <div className="mt-auto pt-5">
+              <Button size="lg" variant="ember" className="w-full" onClick={() => setStep("space")}>
+                Continue <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
 
         {step === "space" && (
-          <div>
-            <p className="text-overline text-hearth">Before anything else</p>
-            <h1 className="mt-2 font-display text-[1.75rem] font-semibold leading-tight tracking-tight sm:text-3xl">
-              Name the place<br />you&apos;ll keep together
-            </h1>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              A warm home for your shared days — plans ahead, and the moments worth keeping.
-            </p>
-
-            <StationerySheet className="mt-7">
-              <label htmlFor="space-name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                What do you call it?
-              </label>
-              <Input
-                id="space-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={isCouple ? "Jordan & Sam" : "The Family"}
-                maxLength={60}
-                autoFocus
-                className="mt-2 h-12 rounded-2xl border-transparent bg-secondary/50 px-4 text-base shadow-inner focus-visible:ring-primary"
-                onKeyDown={(e) => e.key === "Enter" && createSpace()}
-              />
-              <div className="mt-3 flex flex-wrap gap-2">
-                {NAME_SUGGESTIONS[spaceType].map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setName(s)}
-                    className={cn(
-                      "rounded-full px-3 py-1 text-sm transition-all active:scale-95",
-                      name === s ? "bg-primary/15 text-primary ring-1 ring-primary/30" : "bg-secondary/60 text-secondary-foreground hover:bg-secondary",
-                    )}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-
-              <p className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your accent color</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">Shows on avatars, events, and little touches throughout.</p>
-              <div className="mt-3 grid grid-cols-4 gap-3">
-                {ACCENT_SWATCHES.map((s) => (
-                  <button
-                    key={s.hex}
-                    type="button"
-                    aria-label={s.label}
-                    aria-pressed={color === s.hex}
-                    onClick={() => setColor(s.hex)}
-                    className="group flex flex-col items-center gap-1.5"
-                  >
-                    <span
+          <div className="flex flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto pb-2">
+              <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-tight">
+                Name your<br />shared place
+              </h1>
+              <StationerySheet className="mt-4 !p-4">
+                <label htmlFor="space-name" className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  What do you call it?
+                </label>
+                <Input
+                  id="space-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={isCouple ? "Jordan & Sam" : "The Family"}
+                  maxLength={60}
+                  autoFocus
+                  className="mt-2 h-11 rounded-xl border-transparent bg-secondary/50 px-4 text-base shadow-inner focus-visible:ring-primary"
+                  onKeyDown={(e) => e.key === "Enter" && createSpace()}
+                />
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  {NAME_SUGGESTIONS[spaceType].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setName(s)}
                       className={cn(
-                        "h-11 w-11 rounded-full transition-all duration-200 active:scale-90",
-                        color === s.hex ? "scale-110 ring-[3px] ring-foreground/25 ring-offset-2 ring-offset-card" : "ring-1 ring-black/5 hover:scale-105",
+                        "rounded-full px-3 py-1 text-sm transition-all active:scale-95",
+                        name === s
+                          ? "bg-primary/15 text-primary ring-1 ring-primary/30"
+                          : "bg-secondary/60 text-secondary-foreground hover:bg-secondary",
                       )}
-                      style={{ backgroundColor: s.hex }}
-                    />
-                    <span className={cn("text-[10px] font-medium leading-tight", color === s.hex ? "text-foreground" : "text-muted-foreground")}>
-                      {s.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </StationerySheet>
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
 
-            <Button size="lg" className="mt-6 w-full" onClick={createSpace} disabled={busy}>
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Continue <ArrowRight className="h-4 w-4" /></>}
-            </Button>
-            <BackLink onClick={() => setStep("type")} />
+                <p className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Accent color</p>
+                <div className="mt-2.5 grid grid-cols-4 gap-2">
+                  {ACCENT_SWATCHES.map((s) => (
+                    <button
+                      key={s.hex}
+                      type="button"
+                      aria-label={s.label}
+                      aria-pressed={color === s.hex}
+                      onClick={() => setColor(s.hex)}
+                      className="flex flex-col items-center gap-1"
+                    >
+                      <span
+                        className={cn(
+                          "h-9 w-9 rounded-full transition-all duration-200 active:scale-90",
+                          color === s.hex
+                            ? "scale-110 ring-[3px] ring-foreground/25 ring-offset-2 ring-offset-card"
+                            : "ring-1 ring-black/5 hover:scale-105",
+                        )}
+                        style={{ backgroundColor: s.hex }}
+                      />
+                      <span className={cn("text-[10px] font-medium", color === s.hex ? "text-foreground" : "text-muted-foreground")}>
+                        {s.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </StationerySheet>
+            </div>
+            <div className="mt-auto pt-4">
+              <Button size="lg" variant="ember" className="w-full" onClick={createSpace} disabled={busy}>
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Continue <ArrowRight className="h-4 w-4" /></>}
+              </Button>
+              <BackLink onClick={() => setStep("type")} />
+            </div>
           </div>
         )}
 
         {step === "person" && (
-          <div>
-            <p className="text-overline text-hearth">Almost there</p>
-            <h1 className="mt-2 font-display text-[1.75rem] font-semibold leading-tight tracking-tight sm:text-3xl">
-              {isCouple ? "Who's your person?" : "Invite your people"}
-            </h1>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              {isCouple
-                ? "Invite the one you want to keep days with. You'll share a calendar, plans, and the little things."
-                : "Invite someone to share the calendar with — you can always add more people later."}
-            </p>
-
-            <StationerySheet className="mt-7">
-              <label htmlFor="partner-email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Their email
-              </label>
-              <div className="relative mt-2">
-                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="partner-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="them@example.com"
-                  maxLength={255}
-                  autoFocus
-                  className="h-12 rounded-2xl border-transparent bg-secondary/50 pl-11 pr-4 text-base shadow-inner focus-visible:ring-primary"
-                  onKeyDown={(e) => e.key === "Enter" && sendInvite()}
-                />
-              </div>
-              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                If they&apos;re new, they&apos;ll join automatically when they sign up with this email.
+          <div className="flex flex-1 flex-col">
+            <div>
+              <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-tight">
+                {isCouple ? "Who's your person?" : "Invite your people"}
+              </h1>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {isCouple ? "Share the calendar with the one person who matters most." : "Start with one person — you can always add more later."}
               </p>
-            </StationerySheet>
-
-            <Button size="lg" className="mt-6 w-full" onClick={() => sendInvite()} disabled={busy || !email.trim()}>
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Send invite</>}
-            </Button>
-            <button type="button" onClick={() => sendInvite(true)} className="mt-4 w-full py-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
-              I&apos;ll do this later
-            </button>
+              <StationerySheet className="mt-4 !p-4">
+                <label htmlFor="partner-email" className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Their email
+                </label>
+                <div className="relative mt-2">
+                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="partner-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="them@example.com"
+                    maxLength={255}
+                    autoFocus
+                    className="h-11 rounded-xl border-transparent bg-secondary/50 pl-10 pr-4 text-base shadow-inner focus-visible:ring-primary"
+                    onKeyDown={(e) => e.key === "Enter" && sendInvite()}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  New to Hearth? They&apos;ll join automatically when they sign up.
+                </p>
+              </StationerySheet>
+            </div>
+            <div className="mt-auto pt-4">
+              <Button size="lg" className="w-full" onClick={() => sendInvite()} disabled={busy || !email.trim()}>
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send invite"}
+              </Button>
+              <button
+                type="button"
+                onClick={() => sendInvite(true)}
+                className="mt-3 w-full py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                I&apos;ll do this later
+              </button>
+            </div>
           </div>
         )}
 
         {step === "dates" && (
-          <div>
-            <p className="text-overline text-hearth">One more thing</p>
-            <h1 className="mt-2 font-display text-[1.75rem] font-semibold leading-tight tracking-tight sm:text-3xl">
-              Add a few dates<br />you already know
-            </h1>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Birthdays, an anniversary, a trip — so your calendar feels alive from day one.
-            </p>
+          <div className="flex flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto pb-2">
+              <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-tight">
+                Add dates to<br />look forward to
+              </h1>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {DATE_SUGGESTIONS[spaceType].map((s) => (
+                  <button
+                    key={s.title}
+                    type="button"
+                    onClick={() => addRow(s)}
+                    className="inline-flex items-center gap-1 rounded-full bg-secondary/60 px-3 py-1.5 text-sm transition-all hover:bg-secondary active:scale-95"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> {s.title}
+                  </button>
+                ))}
+              </div>
 
-            <div className="mt-6 flex flex-wrap gap-2">
-              {DATE_SUGGESTIONS[spaceType].map((s) => (
-                <button
-                  key={s.title}
-                  type="button"
-                  onClick={() => addRow(s)}
-                  className="inline-flex items-center gap-1 rounded-full bg-secondary/60 px-3 py-1.5 text-sm transition-all hover:bg-secondary active:scale-95"
-                >
-                  <Plus className="h-3.5 w-3.5" /> {s.title}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {rows.map((row, i) => (
-                <StationerySheet key={i} className="!p-4">
-                  <div className="flex items-center gap-2">
-                    <CalendarHeart className="h-4 w-4 shrink-0 text-primary" />
-                    <Input
-                      value={row.title}
-                      onChange={(e) => updateRow(i, { title: e.target.value })}
-                      placeholder="What is it?"
-                      maxLength={60}
-                      className="h-10 flex-1 rounded-xl border-transparent bg-secondary/50"
-                    />
-                    <button type="button" onClick={() => removeRow(i)} aria-label="Remove" className="text-muted-foreground hover:text-foreground">
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="mt-2 flex items-center gap-3">
-                    <Input
-                      type="date"
-                      value={row.date}
-                      onChange={(e) => updateRow(i, { date: e.target.value })}
-                      className="h-10 flex-1 rounded-xl border-transparent bg-secondary/50"
-                    />
-                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <input
-                        type="checkbox"
-                        checked={row.yearly}
-                        onChange={(e) => updateRow(i, { yearly: e.target.checked })}
-                        className="h-4 w-4 accent-[var(--color-primary)]"
+              <div className="mt-3 space-y-2.5">
+                {rows.map((row, i) => (
+                  <StationerySheet key={i} className="!p-3.5">
+                    <div className="flex items-center gap-2">
+                      <CalendarHeart className="h-4 w-4 shrink-0 text-primary" />
+                      <Input
+                        value={row.title}
+                        onChange={(e) => updateRow(i, { title: e.target.value })}
+                        placeholder="What is it?"
+                        maxLength={60}
+                        className="h-9 flex-1 rounded-lg border-transparent bg-secondary/50 text-sm"
                       />
-                      every year
-                    </label>
-                  </div>
-                </StationerySheet>
-              ))}
+                      <button type="button" onClick={() => removeRow(i)} aria-label="Remove" className="text-muted-foreground hover:text-foreground">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2.5">
+                      <Input
+                        type="date"
+                        value={row.date}
+                        onChange={(e) => updateRow(i, { date: e.target.value })}
+                        className="h-9 flex-1 rounded-lg border-transparent bg-secondary/50 text-sm"
+                      />
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={row.yearly}
+                          onChange={(e) => updateRow(i, { yearly: e.target.checked })}
+                          className="h-3.5 w-3.5 accent-[var(--color-primary)]"
+                        />
+                        every year
+                      </label>
+                    </div>
+                  </StationerySheet>
+                ))}
 
+                <button
+                  type="button"
+                  onClick={() => addRow()}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                >
+                  <Plus className="h-4 w-4" /> Add a date
+                </button>
+              </div>
+            </div>
+            <div className="mt-auto pt-4">
+              <Button size="lg" className="w-full" onClick={() => saveDates()} disabled={busy}>
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Continue <ArrowRight className="h-4 w-4" /></>}
+              </Button>
               <button
                 type="button"
-                onClick={() => addRow()}
-                className="flex w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-border py-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                onClick={() => saveDates(true)}
+                className="mt-3 w-full py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                <Plus className="h-4 w-4" /> Add a date
+                Skip for now
               </button>
             </div>
-
-            <Button size="lg" className="mt-6 w-full" onClick={() => saveDates()} disabled={busy}>
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Continue <ArrowRight className="h-4 w-4" /></>}
-            </Button>
-            <button type="button" onClick={() => saveDates(true)} className="mt-4 w-full py-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
-              Skip for now
-            </button>
           </div>
         )}
 
         {step === "ready" && (
           <div className="flex flex-1 flex-col items-center justify-center text-center">
-            <div className="relative mb-6 inline-flex">
-              <span className="absolute inset-0 animate-breathe rounded-full bg-primary/20" />
+            {/* Heart springs in from scale(0) with a celebratory overshoot */}
+            <motion.div
+              className="relative mb-5 inline-flex"
+              initial={{ scale: 0, rotate: -20 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.05 }}
+            >
+              <motion.span
+                className="absolute inset-0 rounded-full bg-primary"
+                animate={{ scale: [1, 1.7, 1], opacity: [0.3, 0, 0.3] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut", repeatDelay: 1 }}
+              />
               <span className="relative inline-flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-b from-primary to-primary-deep text-primary-foreground shadow-glow">
-                <Heart className="h-9 w-9 fill-current" />
+                <motion.span
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.28, type: "spring", stiffness: 400, damping: 18 }}
+                >
+                  <Heart className="h-9 w-9 fill-current" />
+                </motion.span>
               </span>
-            </div>
-            <h1 className="font-display text-3xl font-semibold leading-tight">You&apos;re ready</h1>
-            <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Your place is set. Plan the days ahead, look forward to what&apos;s next, and keep the moments worth remembering.
-            </p>
-            <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-accent/80 px-4 py-2 text-sm text-accent-foreground">
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.42, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <h1 className="font-display text-3xl font-semibold leading-tight">You&apos;re ready</h1>
+              <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
+                Your place is set. Plan ahead, look forward to what&apos;s next, and keep the moments worth remembering.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.58, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-accent/80 px-4 py-2 text-sm text-accent-foreground"
+            >
               <CalendarHeart className="h-4 w-4 text-primary" />
               Your shared calendar, and the little things
-            </div>
-            <Button size="lg" className="mt-8 w-full max-w-xs" onClick={finish}>
-              Open Hearth
-            </Button>
+            </motion.div>
+
+            <motion.div
+              className="mt-auto w-full pt-5"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Button size="lg" variant="ember" className="w-full" onClick={finish}>
+                Open Hearth
+              </Button>
+            </motion.div>
           </div>
         )}
       </main>
@@ -445,6 +500,24 @@ function BackLink({ onClick }: { onClick: () => void }) {
     <button type="button" onClick={onClick} className="mt-4 w-full py-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
       Back
     </button>
+  );
+}
+
+function LinearProgress({ count, current }: { count: number; current: number }) {
+  const pct = ((current + 1) / count) * 100;
+  return (
+    <div className="mt-5" aria-label={`Step ${current + 1} of ${count}`}>
+      <div className="mb-2 flex justify-between text-caption">
+        <span>Setup</span>
+        <span>{current + 1} / {count}</span>
+      </div>
+      <div className="h-1 overflow-hidden rounded-full bg-border">
+        <div
+          className="h-full rounded-full bg-hearth transition-all duration-500 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -466,7 +539,7 @@ function ProgressDots({ count, current }: { count: number; current: number }) {
 
 function StationerySheet({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("relative rounded-[1.75rem] bg-card p-6 shadow-warm-lg", className)}>
+    <div className={cn("relative rounded-[1.75rem] hearth-glass p-6 shadow-elevated", className)}>
       <div
         className="absolute -top-2.5 left-1/2 h-5 w-14 -translate-x-1/2 rounded-sm bg-secondary/90 shadow-sm"
         aria-hidden

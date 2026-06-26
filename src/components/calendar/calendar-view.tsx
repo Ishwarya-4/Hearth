@@ -239,9 +239,9 @@ function TimeGridView({ view, anchor, events, profilesById, calendarColorById, o
   );
 }
 
-function EventChip({ ev, profile, color, onClick, compact, draggable, onDragStart }: {
+function EventChip({ ev, profile, color, onClick, compact, draggable, onDragStart, going = 0 }: {
   ev: EventRow; profile?: ProfileLike; color: string; onClick: () => void; compact?: boolean;
-  draggable?: boolean; onDragStart?: (e: React.DragEvent) => void;
+  draggable?: boolean; onDragStart?: (e: React.DragEvent) => void; going?: number;
 }) {
   return (
     <button
@@ -251,14 +251,18 @@ function EventChip({ ev, profile, color, onClick, compact, draggable, onDragStar
       className={cn("w-full flex items-center gap-1 rounded px-1.5 text-left text-[10.5px] hover:brightness-95", compact ? "py-0.5" : "py-1", draggable && "cursor-grab active:cursor-grabbing")}
       style={{ background: color + "22", borderLeft: `3px solid ${color}` }}
     >
-      {isMilestoneEvent(ev) ? <Sparkles className="h-2.5 w-2.5 shrink-0 text-primary" /> : isRecurringEvent(ev) && <Repeat className="h-2.5 w-2.5 shrink-0 opacity-70" />}
+      {isMilestoneEvent(ev) ? <Sparkles className="h-2.5 w-2.5 shrink-0 text-hearth" /> : isRecurringEvent(ev) && <Repeat className="h-2.5 w-2.5 shrink-0 opacity-70" />}
       <span className="font-semibold truncate flex-1 text-foreground">{ev.title}</span>
-      {profile && <UserAvatar profile={profile} size="xs" />}
+      {going > 0 ? (
+        <span className="shrink-0 rounded-full bg-hearth/15 px-1 text-[9px] font-semibold leading-tight text-hearth">{going}</span>
+      ) : (
+        profile && <UserAvatar profile={profile} size="xs" />
+      )}
     </button>
   );
 }
 
-function MonthView({ anchor, events, profilesById, calendarColorById, onEventClick, onSlotClick, onEventMove }: Props) {
+function MonthView({ anchor, events, profilesById, calendarColorById, attendanceByEvent, onEventClick, onSlotClick, onEventMove }: Props) {
   const grid = useMemo(() => {
     const first = startOfMonth(anchor);
     const start = startOfWeek(first);
@@ -321,6 +325,7 @@ function MonthView({ anchor, events, profilesById, calendarColorById, onEventCli
                         compact
                         draggable={draggable}
                         onDragStart={(e) => e.dataTransfer.setData("text/plain", ev.id)}
+                        going={goingProfiles(ev, attendanceByEvent, profilesById).length}
                       />
                     </div>
                   );
@@ -356,14 +361,18 @@ function AgendaView({ events, profilesById, calendarColorById, attendanceByEvent
   return (
     <div className="rounded-2xl border bg-card shadow-warm overflow-y-auto h-full">
       {groups.length === 0 ? (
-        <p className="p-10 text-center text-sm text-muted-foreground">Nothing here yet — a little quiet is nice too. <span className="font-hand text-base text-primary">Add something to look forward to.</span></p>
+        <p className="p-10 text-center text-sm text-muted-foreground">Nothing here yet — a little quiet is nice too. <span className="font-medium text-hearth">Add something to look forward to.</span></p>
       ) : (
         groups.map(([key, evs]) => {
           const d = new Date(key);
           return (
             <div key={key} className="border-b last:border-b-0">
-              <div className="sticky top-0 bg-secondary/50 backdrop-blur px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-foreground/80">
-                {d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}
+              <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-card/95 px-4 py-2.5 backdrop-blur">
+                <span className="text-sm font-semibold">{d.toLocaleDateString([], { weekday: "long" })}</span>
+                <span className="text-sm text-muted-foreground">{d.toLocaleDateString([], { month: "short", day: "numeric" })}</span>
+                {isSameDay(d, new Date()) && (
+                  <span className="ml-auto rounded-full bg-hearth-muted px-2 py-0.5 text-[11px] font-medium text-hearth">Today</span>
+                )}
               </div>
               <div className="divide-y">
                 {evs.map((ev) => {
@@ -371,11 +380,11 @@ function AgendaView({ events, profilesById, calendarColorById, attendanceByEvent
                   const profile = profilesById[ev.created_by];
                   const going = goingProfiles(ev, attendanceByEvent, profilesById);
                   return (
-                    <button key={ev.id} onClick={() => onEventClick(ev)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-accent/40 transition">
+                    <button key={ev.id} onClick={() => onEventClick(ev)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-accent/60 transition">
                       <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: color }} />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate flex items-center gap-1.5">
-                          {isMilestoneEvent(ev) ? <Sparkles className="h-3 w-3 shrink-0 text-primary" /> : isRecurringEvent(ev) && <Repeat className="h-3 w-3 shrink-0 opacity-70" />}
+                          {isMilestoneEvent(ev) ? <Sparkles className="h-3 w-3 shrink-0 text-hearth" /> : isRecurringEvent(ev) && <Repeat className="h-3 w-3 shrink-0 opacity-70" />}
                           <span className="truncate">{ev.title}</span>
                         </div>
                         <div className="text-xs text-muted-foreground truncate">
@@ -386,7 +395,7 @@ function AgendaView({ events, profilesById, calendarColorById, attendanceByEvent
                       {going.length > 0 ? (
                         <span className="flex shrink-0 items-center gap-1.5">
                           <AvatarStack profiles={going} max={3} size="xs" />
-                          <span className="text-[11px] font-medium text-primary">going</span>
+                          <span className="text-[11px] font-medium text-hearth">going</span>
                         </span>
                       ) : (
                         profile && <UserAvatar profile={profile} size="sm" />

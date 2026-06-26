@@ -1,1 +1,10 @@
-export { LandingHero3D, FeatureCard3D, ScrollReveal3D } from "./hero-3d";
+export { LandingNav } from "./landing-nav";
+export {
+  ScrollReveal,
+  Eyebrow,
+  SpotlightCard,
+  Marquee,
+  Parallax,
+  AppMock,
+  MockLine,
+} from "./landing-sections";

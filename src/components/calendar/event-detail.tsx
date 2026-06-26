@@ -107,7 +107,7 @@ function DetailRow({ icon: Icon, children }: { icon: LucideIcon; children: React
 function Badge({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground">
-      <Icon className="h-3 w-3 text-primary" />{children}
+      <Icon className="h-3 w-3 text-hearth" />{children}
     </span>
   );
 }

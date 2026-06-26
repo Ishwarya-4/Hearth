@@ -321,7 +321,7 @@ export function RsvpControl({
             <div key={m.id} className="flex items-center gap-2">
               <UserAvatar profile={m} size="xs" />
               <span className="flex-1 truncate text-sm">{m.id === currentUserId ? "You" : (m.full_name || m.email)}</span>
-              <span className={cn("text-xs", st === "going" ? "font-medium text-primary" : "text-muted-foreground")}>
+              <span className={cn("text-xs", st === "going" ? "font-medium text-hearth" : "text-muted-foreground")}>
                 {statusLabel(st)}
               </span>
             </div>

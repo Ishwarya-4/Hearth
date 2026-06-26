@@ -125,6 +125,25 @@ function TodayPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [occurrences]);
 
+  // RSVP "going" counts for the space's events (keyed by base event id).
+  const spaceEventIds = useMemo(() => (eventsQ.data ?? []).map((e) => e.id), [eventsQ.data]);
+  const attendanceQ = useQuery({
+    queryKey: ["attendance", [...spaceEventIds].sort((a, b) => a.localeCompare(b)).join(",")],
+    enabled: spaceEventIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("event_attendance").select("event_id,status").in("event_id", spaceEventIds);
+      if (error) throw error;
+      return data as { event_id: string; status: string }[];
+    },
+  });
+  const goingCountByEvent = useMemo(() => {
+    const m: Record<string, number> = {};
+    (attendanceQ.data ?? []).forEach((a) => {
+      if (a.status === "going") m[a.event_id] = (m[a.event_id] ?? 0) + 1;
+    });
+    return m;
+  }, [attendanceQ.data]);
+
   const todayQ = useQuery({
     queryKey: ["moments-today", space?.id, today],
     enabled: !!space,
@@ -209,7 +228,7 @@ function TodayPage() {
         <>
           {/* Hero header */}
           <header className="relative mb-8">
-            <TimeOfDayBanner hour={now.getHours()} />
+            <TimeOfDayBanner />
             <Overline>{dateLabel}</Overline>
             <div className="relative mt-1 flex flex-wrap items-end justify-between gap-4">
               <h1 className="text-display text-foreground">
@@ -234,7 +253,7 @@ function TodayPage() {
             <div className="flex flex-col gap-5">
               {others.length === 0 && peopleQ.isSuccess && (
                 <DashboardItem>
-                  <Panel className="p-5">
+                  <Panel glass className="p-5">
                     <InviteStrip spaceId={space.id} />
                   </Panel>
                 </DashboardItem>
@@ -249,7 +268,7 @@ function TodayPage() {
               {!bothEmpty && (
                 <div className="grid gap-5 sm:grid-cols-2">
                   <DashboardItem>
-                    <Panel className="p-5 sm:p-6">
+                    <Panel glass className="p-5 sm:p-6">
                       <Overline>Next up</Overline>
                       {todaysEvents.length === 0 ? (
                         <TodayEmptyActions onCheckIn={openCompose} />
@@ -261,6 +280,7 @@ function TodayPage() {
                               time={e.all_day ? "All day" : fmtTime(new Date(e.start_at))}
                               title={e.title}
                               color={e.color ?? space.color}
+                              goingCount={goingCountByEvent[e.base_id ?? e.id] ?? 0}
                             />
                           ))}
                         </ul>
@@ -270,6 +290,7 @@ function TodayPage() {
 
                   <DashboardItem>
                     <Panel
+                      glass
                       raised
                       className={cn(
                         "relative overflow-hidden p-5 sm:p-6",
@@ -309,7 +330,7 @@ function TodayPage() {
 
               {/* Daily question */}
               <DashboardItem>
-                <Panel className="relative overflow-hidden p-5 sm:p-6">
+                <Panel glass className="relative overflow-hidden p-5 sm:p-6">
                   {!mine && (
                     <div className="pointer-events-none absolute -left-4 top-0 h-24 w-24 rounded-full bg-hearth/8 blur-2xl" aria-hidden />
                   )}
@@ -345,7 +366,7 @@ function TodayPage() {
 
               {(lastYearQ.data?.length ?? 0) > 0 && (
                 <DashboardItem>
-                  <Panel className="p-5 sm:p-6">
+                  <Panel glass className="p-5 sm:p-6">
                     <Overline>One year ago today</Overline>
                     <div className="mt-4 space-y-4">
                       {lastYearQ.data!.map((m) => (
@@ -360,14 +381,14 @@ function TodayPage() {
             {/* Right rail */}
             <aside className="flex flex-col gap-5">
               <DashboardItem>
-                <Panel className="p-5">
+                <Panel glass className="p-5">
                   <Overline>This week</Overline>
                   <WeekStrip days={weekDays} />
                 </Panel>
               </DashboardItem>
 
               <DashboardItem>
-                <Panel className="p-5">
+                <Panel glass className="p-5">
                   <Overline>Your people</Overline>
                   <ul className="mt-4 space-y-3">
                     {[me, ...others].filter(Boolean).map((p) => (
@@ -389,7 +410,7 @@ function TodayPage() {
               </DashboardItem>
 
               <DashboardItem>
-                <Panel className="p-5">
+                <Panel glass className="p-5">
                   <Overline>Explore</Overline>
                   <nav className="mt-3 space-y-1">
                     <QuickLink to="/calendar" icon={<CalendarPlus className="h-4 w-4" />} label="Full calendar" />
