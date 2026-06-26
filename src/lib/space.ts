@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { sendSpaceInvite } from "@/lib/send-space-invite.server";
 import { z } from "zod";
 
 export type Space = Database["public"]["Tables"]["calendars"]["Row"];
@@ -15,23 +16,42 @@ export function errorMessage(err: unknown, fallback: string) {
   return fallback;
 }
 
+/** Pick the active shared space: prefer a host space you joined over one you own. */
+export function pickSharedSpace(calendars: Space[], userId: string): Space | null {
+  const shared = calendars.filter((c) => !c.is_personal);
+  if (shared.length === 0) return null;
+
+  const byAge = (a: Space, b: Space) => a.created_at.localeCompare(b.created_at);
+
+  const joined = shared.filter((c) => c.owner_id !== userId).sort(byAge);
+  if (joined.length > 0) return joined[0];
+
+  const owned = shared.filter((c) => c.owner_id === userId).sort(byAge);
+  return owned[0] ?? shared.sort(byAge)[0];
+}
+
 /** The couple's shared space — a non-personal calendar, if one exists. */
-export async function getSharedSpace(): Promise<Space | null> {
+export async function getSharedSpace(userId?: string): Promise<Space | null> {
   const { data, error } = await supabase
     .from("calendars")
     .select("*")
-    .order("is_personal", { ascending: true });
+    .order("created_at", { ascending: true });
   if (error) throw error;
-  return data.find((c) => !c.is_personal) ?? null;
+  if (!data?.length) return null;
+
+  const uid = userId ?? (await supabase.auth.getUser()).data.user?.id;
+  if (!uid) return data.find((c) => !c.is_personal) ?? null;
+
+  return pickSharedSpace(data, uid);
 }
 
-export async function hasSharedSpace(): Promise<boolean> {
-  return (await getSharedSpace()) !== null;
+export async function hasSharedSpace(userId?: string): Promise<boolean> {
+  return (await getSharedSpace(userId)) !== null;
 }
 
 /** Create the couple's shared space + set accent color. Returns the space id. */
 export async function createSharedSpace(userId: string, name: string, color: string): Promise<string> {
-  const existing = await getSharedSpace();
+  const existing = await getSharedSpace(userId);
   if (existing) return existing.id;
 
   // Prefer the security-definer RPC when the migration has been applied.
@@ -58,7 +78,7 @@ export async function createSharedSpace(userId: string, name: string, color: str
   if (calErr) throw calErr;
 
   // on_calendar_created trigger should add owner membership; then the space is visible.
-  const space = await getSharedSpace();
+  const space = await getSharedSpace(userId);
   if (space) return space.id;
 
   if (rpcErr && !rpcMissing) throw rpcErr;
@@ -69,34 +89,20 @@ export async function createSharedSpace(userId: string, name: string, color: str
   );
 }
 
-/** Add a partner by email — existing user joins immediately; new users auto-accept on signup. */
+/** Accept any pending invitations for the signed-in user (existing accounts). */
+export async function acceptPendingInvitations() {
+  const { error } = await supabase.rpc("accept_pending_invitations" as never);
+  if (error && error.code !== "PGRST202") throw error;
+}
+
+/**
+ * Invite someone by email — saves a pending invitation and sends a Supabase auth
+ * email (invite for new accounts, magic link for existing ones). They join the
+ * space after signing up or signing in.
+ */
 export async function invitePartner(calendarId: string, rawEmail: string) {
   const parsed = emailSchema.safeParse(rawEmail);
   if (!parsed.success) throw new Error(parsed.error.issues[0].message);
 
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) throw new Error("Not signed in");
-
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("email", parsed.data)
-    .maybeSingle();
-
-  if (existing) {
-    const { error } = await supabase
-      .from("calendar_members")
-      .insert({ calendar_id: calendarId, user_id: existing.id, role: "editor" });
-    if (error && !error.message.includes("duplicate")) throw error;
-    return { kind: "added" as const };
-  }
-
-  const { error } = await supabase.from("invitations").insert({
-    calendar_id: calendarId,
-    invited_email: parsed.data,
-    role: "editor",
-    invited_by: userData.user.id,
-  });
-  if (error) throw error;
-  return { kind: "invited" as const };
+  return sendSpaceInvite({ data: { calendarId, email: parsed.data } });
 }

@@ -8,9 +8,7 @@ import { toast } from "sonner";
 import { Loader2, Mail, UserX, Crown } from "lucide-react";
 import { UserAvatar, type ProfileLike } from "./user-avatar";
 import { useQueryClient } from "@tanstack/react-query";
-import { z } from "zod";
-
-const emailSchema = z.string().trim().email("Enter a valid email").max(255);
+import { invitePartner } from "@/lib/space";
 
 export type MemberRow = {
   id: string;
@@ -41,37 +39,17 @@ export function MembersDialog({
   const [loading, setLoading] = useState(false);
 
   async function invite() {
-    const parsed = emailSchema.safeParse(email);
-    if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+    if (!email.trim()) return;
     setLoading(true);
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("Not signed in");
-
-      const { data: existing } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", parsed.data)
-        .maybeSingle();
-
-      if (existing) {
-        const { error } = await supabase
-          .from("calendar_members")
-          .insert({ calendar_id: calendarId, user_id: existing.id, role: "editor" });
-        if (error && !error.message.includes("duplicate")) throw error;
-        toast.success("Member added");
-      } else {
-        const { error } = await supabase
-          .from("invitations")
-          .insert({ calendar_id: calendarId, invited_email: parsed.data, role: "editor", invited_by: userData.user.id });
-        if (error) throw error;
-        toast.success("Invitation saved — they'll join automatically when they sign up");
-      }
+      const result = await invitePartner(calendarId, email);
+      toast.success(`Invite email sent to ${result.email}`);
       setEmail("");
       qc.invalidateQueries({ queryKey: ["members", calendarId] });
       qc.invalidateQueries({ queryKey: ["invitations", calendarId] });
+      qc.invalidateQueries({ queryKey: ["space-people"] });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not add");
+      toast.error(err instanceof Error ? err.message : "Could not send invite");
     } finally {
       setLoading(false);
     }

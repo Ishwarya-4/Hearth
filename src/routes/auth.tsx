@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { acceptPendingInvitations } from "@/lib/space";
 import { MagneticButton } from "@/components/motion/magnetic-button";
 import { HearthAuthCanvas } from "@/components/three/lazy-canvas";
 import { toast } from "sonner";
@@ -41,10 +42,34 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
 
+  // Magic-link / invite emails land here with tokens in the URL hash.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/today" });
+    let routed = false;
+
+    async function enterApp() {
+      if (routed) return;
+      routed = true;
+      try {
+        await acceptPendingInvitations();
+      } catch {
+        /* RPC may not exist until migration is applied */
+      }
+      navigate({ to: "/today" });
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+        void enterApp();
+      }
     });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) void enterApp();
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   useEffect(() => {

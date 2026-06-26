@@ -118,7 +118,7 @@ function WelcomePage() {
     setBusy(true);
     try {
       const result = await invitePartner(spaceId, email);
-      toast.success(result.kind === "added" ? "They're in 🤍" : "Invite saved — they'll join when they sign up");
+      toast.success(`Invite email sent to ${result.email}`);
       qc.invalidateQueries({ queryKey: ["space-people"] });
       qc.invalidateQueries({ queryKey: ["invitations"] });
       setEmail("");

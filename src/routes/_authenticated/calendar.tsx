@@ -469,7 +469,7 @@ function AppPage() {
       userId={user.id}
       fullBleed
       header={
-        <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-lg">
+        <header className="sticky top-0 z-30 border-b border-border/40 bg-background/95 backdrop-blur-lg moonstone-chrome">
         <div className="flex h-14 items-center gap-2 px-3 sm:px-5">
           <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(true)} aria-label="Menu">
             <Menu className="h-5 w-5" />

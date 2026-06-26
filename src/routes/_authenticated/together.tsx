@@ -168,7 +168,7 @@ function NewListForm({ onCreate, onCancel }: { onCreate: (title: string, kind: "
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<"list" | "bucket">("list");
   return (
-    <Panel raised className="p-5">
+    <Panel glass raised className="p-5">
       <Overline>New list</Overline>
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
         <Input
@@ -225,7 +225,7 @@ function ListCard({
   }
 
   return (
-    <Panel className="flex flex-col p-5">
+    <Panel glass className="flex flex-col p-5">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg", isBucket ? "bg-hearth-muted text-hearth" : "bg-muted text-muted-foreground")}>
