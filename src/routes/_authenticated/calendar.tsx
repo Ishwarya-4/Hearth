@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { motion } from "framer-motion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,6 +37,44 @@ export const Route = createFileRoute("/_authenticated/calendar")({
 });
 
 type ViewKind = "day" | "3day" | "week" | "month" | "agenda";
+const VIEW_OPTIONS: { value: ViewKind; label: string }[] = [
+  { value: "day", label: "Day" },
+  { value: "3day", label: "3-day" },
+  { value: "week", label: "Week" },
+  { value: "month", label: "Month" },
+  { value: "agenda", label: "Agenda" },
+];
+
+function ViewSegmented({ view, onChange }: { view: ViewKind; onChange: (v: ViewKind) => void }) {
+  return (
+    <div className="inline-flex items-center gap-0.5 rounded-full border border-border bg-secondary/60 p-0.5">
+      {VIEW_OPTIONS.map((v) => {
+        const active = view === v.value;
+        return (
+          <button
+            key={v.value}
+            type="button"
+            onClick={() => onChange(v.value)}
+            aria-pressed={active}
+            className={cn(
+              "relative rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+              active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {active && (
+              <motion.span
+                layoutId="calendar-view-pill"
+                className="absolute inset-0 rounded-full bg-background shadow-elevated"
+                transition={{ type: "spring", stiffness: 420, damping: 34 }}
+              />
+            )}
+            <span className="relative">{v.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 type CalendarRow = { id: string; name: string; color: string; owner_id: string; is_personal: boolean };
 type MemberRow = { id: string; calendar_id: string; user_id: string; role: "owner" | "editor" | "viewer" };
 
@@ -446,7 +484,7 @@ function AppPage() {
             <Button variant="ghost" size="icon" onClick={() => shift(1)} aria-label="Next"><ChevronRight className="h-4 w-4" /></Button>
           </div>
 
-          <h1 className="font-display text-base sm:text-lg font-semibold truncate flex-1 min-w-0">{headerLabel}</h1>
+          <h1 className="font-display text-lg sm:text-xl font-semibold tracking-tight truncate flex-1 min-w-0">{headerLabel}</h1>
 
           <div className="relative hidden sm:block">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -484,15 +522,7 @@ function AppPage() {
             <Button variant="ghost" size="icon" onClick={() => shift(-1)} aria-label="Previous"><ChevronLeft className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" onClick={() => shift(1)} aria-label="Next"><ChevronRight className="h-4 w-4" /></Button>
           </div>
-          <Tabs value={view} onValueChange={(v) => setView(v as ViewKind)}>
-            <TabsList className="h-8">
-              <TabsTrigger value="day" className="text-xs px-2.5">Day</TabsTrigger>
-              <TabsTrigger value="3day" className="text-xs px-2.5">3-day</TabsTrigger>
-              <TabsTrigger value="week" className="text-xs px-2.5">Week</TabsTrigger>
-              <TabsTrigger value="month" className="text-xs px-2.5">Month</TabsTrigger>
-              <TabsTrigger value="agenda" className="text-xs px-2.5">Agenda</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <ViewSegmented view={view} onChange={setView} />
           {allMembersQ.data && allMembersQ.data.length > 1 && (
             <div className="ml-auto hidden sm:flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Your people</span>

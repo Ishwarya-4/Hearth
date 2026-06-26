@@ -251,22 +251,78 @@
 
   /* Surfaces */
   .hearth-panel {
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     background-color: var(--color-card);
     border: 1px solid var(--color-border);
+    box-shadow:
+      0 1px 2px oklch(0.2 0.02 285 / 0.04),
+      0 6px 20px -10px oklch(0.2 0.02 285 / 0.1),
+      inset 0 1px 0 oklch(1 0 0 / 0.55);
+  }
+  .dark .hearth-panel {
+    box-shadow:
+      0 1px 2px oklch(0 0 0 / 0.25),
+      0 8px 24px -12px oklch(0 0 0 / 0.5),
+      inset 0 1px 0 oklch(1 0 0 / 0.04);
   }
   .hearth-panel-raised {
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     background-color: var(--color-surface-raised);
     border: 1px solid var(--color-border);
     box-shadow:
-      0 1px 2px oklch(0.2 0.01 285 /0.04),
-      0 4px 16px oklch(0.2 0.01 285 /0.06);
+      0 1px 2px oklch(0.2 0.02 285 / 0.05),
+      0 12px 32px -14px oklch(0.2 0.02 285 / 0.16),
+      inset 0 1px 0 oklch(1 0 0 / 0.6);
   }
   .dark .hearth-panel-raised {
     box-shadow:
-      0 1px 2px oklch(0 0 0 / 0.3),
-      0 4px 16px oklch(0 0 0 / 0.4);
+      0 1px 2px oklch(0 0 0 / 0.35),
+      0 16px 40px -16px oklch(0 0 0 / 0.6),
+      inset 0 1px 0 oklch(1 0 0 / 0.05);
+  }
+
+  /* Interactive lift for tappable cards */
+  .hover-lift {
+    transition:
+      transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.24s ease,
+      border-color 0.24s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-3px);
+    border-color: oklch(0.56 0.19 280 / 0.28);
+    box-shadow:
+      0 10px 34px -12px oklch(0.2 0.02 285 / 0.2),
+      inset 0 1px 0 oklch(1 0 0 / 0.6);
+  }
+  .dark .hover-lift:hover {
+    box-shadow:
+      0 16px 44px -14px oklch(0 0 0 / 0.7),
+      inset 0 1px 0 oklch(1 0 0 / 0.05);
+  }
+
+  /* Shimmer skeleton for loading states */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-muted);
+    border-radius: var(--radius-md);
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.5), transparent);
+    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  }
+  .dark .skeleton::after {
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.06), transparent);
+  }
+  @keyframes skeleton-shimmer {
+    100% {
+      transform: translateX(100%);
+    }
   }
 
   /* Legacy aliases */
@@ -556,9 +612,16 @@
   .animate-hearth-enter,
   .animate-breathe,
   .animate-glow-ring,
-  .surface-card-hover {
+  .surface-card-hover,
+  .hover-lift {
     animation: none;
     transition: none;
+  }
+  .hover-lift:hover {
+    transform: none;
+  }
+  .skeleton::after {
+    animation: none;
   }
 }
 

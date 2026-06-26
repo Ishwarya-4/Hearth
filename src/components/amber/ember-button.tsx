@@ -11,7 +11,7 @@ const shimmerVariants = {
   idle: { x: "-115%" },
   hovered: {
     x: "115%",
-    transition: { duration: 0.62, ease: [0.4, 0, 0.2, 1] },
+    transition: { duration: 0.62, ease: [0.4, 0, 0.2, 1] as const },
   },
 };
 

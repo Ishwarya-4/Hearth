@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { type ProfileLike } from "@/components/calendar/user-avatar";
+import { UserAvatar, type ProfileLike } from "@/components/calendar/user-avatar";
 import { MemoryCard, type Moment } from "@/components/memories/memory-card";
 import { MemoryDetailSheet } from "@/components/memories/memory-detail-sheet";
 import { ScrapbookView } from "@/components/memories/scrapbook-view";
 import { ViewSwitcher, useMemoryView } from "@/components/memories/view-switcher";
 import { toast } from "sonner";
-import { Heart, ImagePlus, Loader2, MapPin, Plus, Sparkles, X } from "lucide-react";
+import { Heart, Image as ImageIcon, ImagePlus, Loader2, MapPin, Plus, Sparkles, X } from "lucide-react";
 import { MOODS, moodMeta, todayISODate } from "@/lib/prompts";
 import { useSpace } from "@/lib/use-space";
 import { uploadMemoryPhoto } from "@/lib/storage";
@@ -34,10 +34,20 @@ export const Route = createFileRoute("/_authenticated/memories")({
 
 function MemoriesPage() {
   const { user } = Route.useRouteContext();
-  const { space, profileById } = useSpace(user.id);
+  const { space, members, profileById } = useSpace(user.id);
   const [composing, setComposing] = useState(false);
   const [view, setView] = useMemoryView();
   const [selected, setSelected] = useState<Moment | null>(null);
+  const [personFilter, setPersonFilter] = useState<string | null>(null);
+  const [photosOnly, setPhotosOnly] = useState(false);
+
+  const chipCls = (active: boolean) =>
+    cn(
+      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+      active
+        ? "border-hearth/40 bg-hearth-muted text-foreground"
+        : "border-border bg-secondary/50 text-muted-foreground hover:text-foreground",
+    );
 
   // Client-only guard for the map (Leaflet can't render on the server).
   const [mounted, setMounted] = useState(false);
@@ -60,27 +70,36 @@ function MemoriesPage() {
 
   const moments = momentsQ.data ?? [];
 
+  const filtered = useMemo(
+    () =>
+      moments.filter(
+        (m) => (!personFilter || m.created_by === personFilter) && (!photosOnly || !!m.photo_url),
+      ),
+    [moments, personFilter, photosOnly],
+  );
+
   const groups = useMemo(() => {
     const m = new Map<string, Moment[]>();
-    moments.forEach((mo) => {
+    filtered.forEach((mo) => {
       const arr = m.get(mo.happened_on) ?? [];
       arr.push(mo);
       m.set(mo.happened_on, arr);
     });
     return Array.from(m.entries());
-  }, [moments]);
+  }, [filtered]);
 
   const onThisDay = useMemo(() => {
     const now = new Date();
     const md = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    return moments.filter(
+    return filtered.filter(
       (mo) =>
         mo.happened_on.slice(5) === md && Number(mo.happened_on.slice(0, 4)) < now.getFullYear(),
     );
-  }, [moments]);
+  }, [filtered]);
 
   const count = moments.length;
-  const hasMoments = groups.length > 0;
+  const hasMoments = moments.length > 0;
+  const noResults = hasMoments && filtered.length === 0;
 
   return (
     <AppFrame userId={user.id}>
@@ -118,7 +137,36 @@ function MemoriesPage() {
         />
       )}
 
-      {hasMoments && view === "timeline" && (
+      {hasMoments && (
+        <div className="mb-6 flex flex-wrap items-center gap-1.5">
+          <button type="button" onClick={() => setPersonFilter(null)} aria-pressed={personFilter === null} className={chipCls(personFilter === null)}>
+            Everyone
+          </button>
+          {members.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setPersonFilter((c) => (c === p.id ? null : p.id))}
+              aria-pressed={personFilter === p.id}
+              className={chipCls(personFilter === p.id)}
+            >
+              <UserAvatar profile={p} size="xs" />
+              {p.id === user.id ? "You" : p.full_name?.split(" ")[0] || p.email}
+            </button>
+          ))}
+          <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+          <button type="button" onClick={() => setPhotosOnly((v) => !v)} aria-pressed={photosOnly} className={chipCls(photosOnly)}>
+            <ImageIcon className="h-3.5 w-3.5" />
+            Photos
+          </button>
+        </div>
+      )}
+
+      {noResults && (
+        <p className="py-16 text-center text-caption">No memories match these filters.</p>
+      )}
+
+      {hasMoments && !noResults && view === "timeline" && (
         <>
           {onThisDay.length > 0 && (
             <section className="mb-10">
@@ -158,15 +206,16 @@ function MemoriesPage() {
         </>
       )}
 
-      {hasMoments && view === "scrapbook" && (
-        <ScrapbookView moments={moments} profileById={profileById} onSelect={setSelected} />
+      {hasMoments && !noResults && view === "scrapbook" && (
+        <ScrapbookView moments={filtered} profileById={profileById} onSelect={setSelected} />
       )}
 
       {hasMoments &&
+        !noResults &&
         view === "map" &&
         (mounted ? (
           <Suspense fallback={<MapLoading />}>
-            <MapView moments={moments} profileById={profileById} onSelect={setSelected} />
+            <MapView moments={filtered} profileById={profileById} onSelect={setSelected} />
           </Suspense>
         ) : (
           <MapLoading />
@@ -223,7 +272,7 @@ function DayGroup({
       initial={reduced ? {} : { opacity: 0, x: -14 }}
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
     >
       {/* Timeline node: outer pulse ring + inner solid dot */}
       <div className="absolute -left-6 top-1.5 flex h-4 w-4 items-center justify-center sm:-left-8">

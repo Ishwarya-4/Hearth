@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Wordmark } from "@/components/wordmark";
@@ -266,6 +266,23 @@ function MobileNav({
   );
 }
 
+/** Gentle rise + fade on each route mount. */
+function PageTransition({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const reduced = useReducedMotion();
+  if (reduced) return <>{children}</>;
+  return (
+    <motion.div
+      key={pathname}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 function MobileTopBar({
   userId,
   trailing,
@@ -333,7 +350,7 @@ export function AppFrame({
                 ),
           )}
         >
-          {children}
+          {fullBleed ? children : <PageTransition>{children}</PageTransition>}
         </main>
       </div>
 

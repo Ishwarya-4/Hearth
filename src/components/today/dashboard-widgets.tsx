@@ -21,7 +21,7 @@ const settleIn = {
     scale: 1,
     transition: {
       duration: 0.62,
-      ease: [0.16, 1, 0.3, 1],
+      ease: [0.16, 1, 0.3, 1] as const,
       opacity: { duration: 0.38, ease: "easeOut" },
     },
   },
@@ -140,7 +140,7 @@ export function CountdownRing({
           strokeDasharray={c}
           initial={reduced ? { strokeDashoffset: offset } : { strokeDashoffset: c }}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.25, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 1.25, ease: [0.16, 1, 0.3, 1] as const }}
         />
       </svg>
       {/* Spring-counted number */}

@@ -24,7 +24,7 @@ const unfold = {
     y: 0,
     transition: {
       duration: 0.52,
-      ease: [0.16, 1, 0.3, 1],
+      ease: [0.16, 1, 0.3, 1] as const,
       opacity: { duration: 0.32 },
     },
   },

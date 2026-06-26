@@ -179,6 +179,50 @@ CREATE POLICY "attendance_update_self" ON public.event_attendance FOR UPDATE TO 
 CREATE POLICY "attendance_delete_self" ON public.event_attendance FOR DELETE TO authenticated
   USING (user_id = auth.uid());
 
+-- Shared lists (bucket lists, packing, gifts) — collaborative within a space.
+CREATE TABLE public.lists (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  calendar_id UUID NOT NULL REFERENCES public.calendars(id) ON DELETE CASCADE,
+  created_by  UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title       TEXT NOT NULL,
+  kind        TEXT NOT NULL DEFAULT 'list' CHECK (kind IN ('list', 'bucket')),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE public.list_items (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  list_id    UUID NOT NULL REFERENCES public.lists(id) ON DELETE CASCADE,
+  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  body       TEXT NOT NULL,
+  done       BOOLEAN NOT NULL DEFAULT false,
+  done_by    UUID REFERENCES auth.users(id),
+  position   DOUBLE PRECISION NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.lists TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.list_items TO authenticated;
+GRANT ALL ON public.lists TO service_role;
+GRANT ALL ON public.list_items TO service_role;
+ALTER TABLE public.lists ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.list_items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "lists_select_member" ON public.lists FOR SELECT TO authenticated
+  USING (public.is_calendar_member(calendar_id, auth.uid()));
+CREATE POLICY "lists_insert_member" ON public.lists FOR INSERT TO authenticated
+  WITH CHECK (created_by = auth.uid() AND public.is_calendar_member(calendar_id, auth.uid()));
+CREATE POLICY "lists_update_member" ON public.lists FOR UPDATE TO authenticated
+  USING (public.is_calendar_member(calendar_id, auth.uid()));
+CREATE POLICY "lists_delete_member" ON public.lists FOR DELETE TO authenticated
+  USING (public.is_calendar_member(calendar_id, auth.uid()));
+
+CREATE POLICY "list_items_select_member" ON public.list_items FOR SELECT TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.lists l WHERE l.id = list_id AND public.is_calendar_member(l.calendar_id, auth.uid())));
+CREATE POLICY "list_items_insert_member" ON public.list_items FOR INSERT TO authenticated
+  WITH CHECK (created_by = auth.uid() AND EXISTS (SELECT 1 FROM public.lists l WHERE l.id = list_id AND public.is_calendar_member(l.calendar_id, auth.uid())));
+CREATE POLICY "list_items_update_member" ON public.list_items FOR UPDATE TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.lists l WHERE l.id = list_id AND public.is_calendar_member(l.calendar_id, auth.uid())));
+CREATE POLICY "list_items_delete_member" ON public.list_items FOR DELETE TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.lists l WHERE l.id = list_id AND public.is_calendar_member(l.calendar_id, auth.uid())));
+
 CREATE POLICY "invitations_select_owner_or_invited" ON public.invitations FOR SELECT TO authenticated
   USING (
     invited_by = auth.uid()

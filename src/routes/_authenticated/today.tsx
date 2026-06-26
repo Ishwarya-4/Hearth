@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppFrame } from "@/components/app-frame";
-import { Panel, Overline, EmptyState } from "@/components/hearth";
+import { Panel, Overline, EmptyState, Skeleton } from "@/components/hearth";
 import {
   EmberButton,
   GhostButton,
@@ -211,8 +211,24 @@ function TodayPage() {
   return (
     <AppFrame userId={user.id} maxWidth="wide" onQuickAddQuestion={openCompose}>
       {spaceQ.isLoading && (
-        <div className="flex justify-center py-24">
-          <span className="h-5 w-5 animate-pulse rounded-full bg-muted-foreground/30" aria-label="Loading" />
+        <div aria-label="Loading" aria-busy="true">
+          <div className="mb-8 space-y-3">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-9 w-56 rounded-lg" />
+          </div>
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_280px]">
+            <div className="flex flex-col gap-5">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Skeleton className="h-40 rounded-xl" />
+                <Skeleton className="h-40 rounded-xl" />
+              </div>
+              <Skeleton className="h-60 rounded-xl" />
+            </div>
+            <div className="flex flex-col gap-5">
+              <Skeleton className="h-44 rounded-xl" />
+              <Skeleton className="h-44 rounded-xl" />
+            </div>
+          </div>
         </div>
       )}
 

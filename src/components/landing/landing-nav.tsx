@@ -37,7 +37,7 @@ export function LandingNav({
     <motion.header
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
       className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4"
     >
       <div

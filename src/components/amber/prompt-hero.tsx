@@ -23,7 +23,7 @@ function WordReveal({ text, className }: { text: string; className?: string }) {
           transition={{
             delay: i * 0.042,
             duration: 0.58,
-            ease: [0.16, 1, 0.3, 1],
+            ease: [0.16, 1, 0.3, 1] as const,
           }}
         >
           {word}
@@ -69,7 +69,7 @@ export function PromptHero({
             initial={reduced ? {} : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             // Wait for the last word to land before the CTA appears
-            transition={{ delay: wordCount * 0.042 + 0.1, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ delay: wordCount * 0.042 + 0.1, duration: 0.4, ease: [0.16, 1, 0.3, 1] as const }}
           >
             Tap to answer
           </motion.p>
