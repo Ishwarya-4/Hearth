@@ -127,7 +127,7 @@ export function MembersDialog({
                 <p className="text-xs text-muted-foreground truncate">{m.profile.email}</p>
               </div>
               {m.role === "owner" ? (
-                <span className="inline-flex items-center gap-1 text-xs text-primary"><Crown className="h-3 w-3" />Owner</span>
+                <span className="inline-flex items-center gap-1 text-xs text-hearth"><Crown className="h-3 w-3" />Owner</span>
               ) : (
                 isOwner && (
                   <Button variant="ghost" size="icon" onClick={() => removeMember(m.id)} aria-label="Remove member">

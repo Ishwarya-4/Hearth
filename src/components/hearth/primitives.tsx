@@ -5,13 +5,20 @@ export function Panel({
   children,
   className,
   raised,
+  glass,
 }: {
   children: ReactNode;
   className?: string;
   raised?: boolean;
+  glass?: boolean;
 }) {
   return (
-    <section className={cn(raised ? "hearth-panel-raised" : "hearth-panel", className)}>
+    <section
+      className={cn(
+        glass ? "hearth-glass" : raised ? "hearth-panel-raised" : "hearth-panel",
+        className,
+      )}
+    >
       {children}
     </section>
   );

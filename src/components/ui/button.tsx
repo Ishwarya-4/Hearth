@@ -13,6 +13,7 @@ const buttonVariants = cva(
         outline: "border border-border bg-background hover:bg-accent hover:text-accent-foreground",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
+        ember: "bg-gradient-to-br from-hearth to-ember text-primary-foreground shadow-[0_2px_12px_oklch(0.56_0.19_280/0.35)] hover:shadow-[0_4px_20px_oklch(0.56_0.19_280/0.45)]",
         link: "text-hearth underline-offset-4 hover:underline active:scale-100",
       },
       size: {

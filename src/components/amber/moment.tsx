@@ -6,9 +6,28 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Moment = Database["public"]["Tables"]["moments"]["Row"];
 
-const reveal = {
-  hidden: { opacity: 0, y: 6 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const } },
+/**
+ * Unfolds from the top — like an envelope opening. The content settles from
+ * a slight blur and scaleY collapse, origin pinned at the top edge.
+ */
+const unfold = {
+  hidden: {
+    opacity: 0,
+    scaleY: 0.93,
+    filter: "blur(3px)",
+    y: -6,
+  },
+  show: {
+    opacity: 1,
+    scaleY: 1,
+    filter: "blur(0px)",
+    y: 0,
+    transition: {
+      duration: 0.52,
+      ease: [0.16, 1, 0.3, 1],
+      opacity: { duration: 0.32 },
+    },
+  },
 };
 
 export function MomentReveal({
@@ -46,8 +65,14 @@ export function MomentReveal({
   );
 
   if (!animate || reduced) return body;
+
   return (
-    <motion.div variants={reveal} initial="hidden" animate="show">
+    <motion.div
+      variants={unfold}
+      initial="hidden"
+      animate="show"
+      style={{ transformOrigin: "top center" }}
+    >
       {body}
     </motion.div>
   );

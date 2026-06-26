@@ -22,14 +22,14 @@ import { EventDetail } from "@/components/calendar/event-detail";
 import { UserAvatar, AvatarStack, type ProfileLike } from "@/components/calendar/user-avatar";
 import { Wordmark } from "@/components/wordmark";
 import { AppFrame, ProfileMenu } from "@/components/app-frame";
-import { addDays, EVENT_COLORS, expandRecurring, matchesSearch, sanitizeSearchTerm, startOfDay, startOfMonth, startOfWeek } from "@/lib/calendar-utils";
+import { addDays, EVENT_COLORS, expandRecurring, isSameDay, matchesSearch, sanitizeSearchTerm, startOfDay, startOfMonth, startOfWeek } from "@/lib/calendar-utils";
 import { useReminders, requestNotificationPermission, notificationsSupported } from "@/lib/use-reminders";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({ meta: [{ title: "Calendar — Hearth" }] }),
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { new?: string; title?: string } => ({
     new: typeof search.new === "string" ? search.new : undefined,
     title: typeof search.title === "string" ? search.title : undefined,
   }),
@@ -499,6 +499,46 @@ function AppPage() {
               <AvatarStack profiles={allMembersQ.data} max={4} size="sm" />
             </div>
           )}
+        </div>
+
+        {/* Mobile week strip — tap a day to jump there */}
+        <div className="sm:hidden border-t border-border/60 px-1.5 pb-2 pt-1.5">
+          <div className="grid grid-cols-7 gap-0.5">
+            {(() => {
+              const ws = startOfWeek(anchor);
+              const evDays = new Set(displayEvents.map((e) => startOfDay(new Date(e.start_at)).getTime()));
+              return [0, 1, 2, 3, 4, 5, 6].map((i) => {
+                const d = addDays(ws, i);
+                const isAnchor = isSameDay(d, anchor);
+                const isToday = isSameDay(d, new Date());
+                const has = evDays.has(startOfDay(d).getTime());
+                return (
+                  <button
+                    key={d.toISOString()}
+                    type="button"
+                    onClick={() => { setAnchor(d); if (view === "month" || view === "agenda") setView("day"); }}
+                    className={cn(
+                      "flex flex-col items-center gap-1 rounded-lg py-1.5 transition-colors",
+                      isAnchor ? "bg-accent" : "hover:bg-accent/50",
+                    )}
+                  >
+                    <span className="text-[10px] font-medium uppercase text-muted-foreground">
+                      {d.toLocaleDateString([], { weekday: "narrow" })}
+                    </span>
+                    <span
+                      className={cn(
+                        "flex h-7 w-7 items-center justify-center rounded-full text-sm",
+                        isToday ? "bg-primary font-semibold text-primary-foreground" : isAnchor ? "font-semibold text-foreground" : "text-foreground",
+                      )}
+                    >
+                      {d.getDate()}
+                    </span>
+                    <span className={cn("h-1 w-1 rounded-full", has ? "bg-hearth" : "bg-transparent")} />
+                  </button>
+                );
+              });
+            })()}
+          </div>
         </div>
 
         <div className="sm:hidden px-3 pb-2">
