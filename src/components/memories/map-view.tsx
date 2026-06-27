@@ -114,7 +114,7 @@ export default function MapView({
             key={l.id}
             type="button"
             onClick={() => focus(l)}
-            className="flex w-full items-center gap-3 rounded-xl border border-border bg-secondary/40 p-2 text-left transition-colors hover:bg-secondary"
+            className="memory-map-place-btn flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-all duration-300 hover:translate-x-0.5"
           >
             {l.photo_url ? (
               <img
@@ -148,7 +148,7 @@ export default function MapView({
         )}
       </aside>
 
-      <div className="order-1 h-[60vh] min-h-[420px] flex-1 overflow-hidden rounded-2xl border border-border lg:order-2">
+      <div className="order-1 h-[60vh] min-h-[420px] flex-1 overflow-hidden rounded-2xl memory-map-frame lg:order-2">
         <MapContainer
           ref={setMap}
           center={[20, 0]}

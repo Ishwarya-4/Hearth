@@ -251,22 +251,78 @@
 
   /* Surfaces */
   .hearth-panel {
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     background-color: var(--color-card);
     border: 1px solid var(--color-border);
+    box-shadow:
+      0 1px 2px oklch(0.2 0.02 285 / 0.04),
+      0 6px 20px -10px oklch(0.2 0.02 285 / 0.1),
+      inset 0 1px 0 oklch(1 0 0 / 0.55);
+  }
+  .dark .hearth-panel {
+    box-shadow:
+      0 1px 2px oklch(0 0 0 / 0.25),
+      0 8px 24px -12px oklch(0 0 0 / 0.5),
+      inset 0 1px 0 oklch(1 0 0 / 0.04);
   }
   .hearth-panel-raised {
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     background-color: var(--color-surface-raised);
     border: 1px solid var(--color-border);
     box-shadow:
-      0 1px 2px oklch(0.2 0.01 285 /0.04),
-      0 4px 16px oklch(0.2 0.01 285 /0.06);
+      0 1px 2px oklch(0.2 0.02 285 / 0.05),
+      0 12px 32px -14px oklch(0.2 0.02 285 / 0.16),
+      inset 0 1px 0 oklch(1 0 0 / 0.6);
   }
   .dark .hearth-panel-raised {
     box-shadow:
-      0 1px 2px oklch(0 0 0 / 0.3),
-      0 4px 16px oklch(0 0 0 / 0.4);
+      0 1px 2px oklch(0 0 0 / 0.35),
+      0 16px 40px -16px oklch(0 0 0 / 0.6),
+      inset 0 1px 0 oklch(1 0 0 / 0.05);
+  }
+
+  /* Interactive lift for tappable cards */
+  .hover-lift {
+    transition:
+      transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.24s ease,
+      border-color 0.24s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-3px);
+    border-color: oklch(0.56 0.19 280 / 0.28);
+    box-shadow:
+      0 10px 34px -12px oklch(0.2 0.02 285 / 0.2),
+      inset 0 1px 0 oklch(1 0 0 / 0.6);
+  }
+  .dark .hover-lift:hover {
+    box-shadow:
+      0 16px 44px -14px oklch(0 0 0 / 0.7),
+      inset 0 1px 0 oklch(1 0 0 / 0.05);
+  }
+
+  /* Shimmer skeleton for loading states */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-muted);
+    border-radius: var(--radius-md);
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.5), transparent);
+    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  }
+  .dark .skeleton::after {
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.06), transparent);
+  }
+  @keyframes skeleton-shimmer {
+    100% {
+      transform: translateX(100%);
+    }
   }
 
   /* Legacy aliases */
@@ -556,9 +612,16 @@
   .animate-hearth-enter,
   .animate-breathe,
   .animate-glow-ring,
-  .surface-card-hover {
+  .surface-card-hover,
+  .hover-lift {
     animation: none;
     transition: none;
+  }
+  .hover-lift:hover {
+    transform: none;
+  }
+  .skeleton::after {
+    animation: none;
   }
 }
 
@@ -846,5 +909,342 @@
   .animate-marquee,
   .animate-scroll-cue {
     animation: none;
+  }
+}
+
+/* =============================================================================
+   HEARTH — Today "Moonstone" Stage
+   A scoped, airy light theme for the authenticated Today dashboard. A calm
+   pale-lavender dawn — cooler and more dimensional than the plain white app
+   default — with periwinkle carried only as the accent. `.moonstone`
+   re-declares the design tokens (exactly like `.dark`) so every token-driven
+   child — amber, hearth, shadcn — re-skins automatically.
+   ============================================================================= */
+.moonstone {
+  --void: oklch(0.2 0.02 285);
+  --ember: oklch(0.72 0.13 60);
+  --ember-muted: oklch(0.72 0.13 60 / 0.14);
+
+  --background: oklch(0.93 0.022 282);
+  --foreground: oklch(0.26 0.02 285);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.26 0.02 285);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.26 0.02 285);
+
+  --primary: oklch(0.27 0.02 285);
+  --primary-deep: oklch(0.2 0.02 285);
+  --primary-foreground: oklch(0.98 0.005 285);
+
+  --hearth: oklch(0.52 0.18 286);
+  --hearth-muted: oklch(0.52 0.18 286 / 0.12);
+
+  --secondary: oklch(0.965 0.012 284);
+  --secondary-foreground: oklch(0.34 0.02 285);
+  --muted: oklch(0.91 0.018 283);
+  --muted-foreground: oklch(0.49 0.022 285);
+  --accent: oklch(0.95 0.022 285);
+  --accent-foreground: oklch(0.28 0.02 285);
+
+  --destructive: oklch(0.55 0.18 25);
+  --destructive-foreground: oklch(0.99 0.002 285);
+
+  --border: oklch(0.52 0.04 285 / 0.16);
+  --input: oklch(0.55 0.03 285 / 0.18);
+  --ring: oklch(0.52 0.18 286);
+
+  --surface-raised: oklch(1 0 0);
+
+  --sidebar: oklch(0.97 0.014 284);
+  --sidebar-foreground: oklch(0.26 0.02 285);
+  --sidebar-primary: oklch(0.52 0.18 286);
+  --sidebar-primary-foreground: oklch(0.98 0.005 285);
+  --sidebar-accent: oklch(0.94 0.02 285);
+  --sidebar-accent-foreground: oklch(0.28 0.02 285);
+  --sidebar-border: oklch(0.52 0.04 285 / 0.12);
+  --sidebar-ring: oklch(0.52 0.18 286);
+
+  color: var(--foreground);
+}
+
+@layer utilities {
+  /* ── The dawn sky: pale lavender with soft periwinkle/blue blooms ───────── */
+  .moonstone-sky {
+    background:
+      radial-gradient(120% 80% at 82% -12%, oklch(0.96 0.035 288) 0%, transparent 56%),
+      radial-gradient(95% 70% at 0% 22%, oklch(0.94 0.04 250 / 0.7) 0%, transparent 60%),
+      radial-gradient(85% 62% at 62% 112%, oklch(0.92 0.05 305 / 0.5) 0%, transparent 56%),
+      linear-gradient(
+        180deg,
+        oklch(0.955 0.018 284) 0%,
+        oklch(0.905 0.026 281) 58%,
+        oklch(0.93 0.022 288) 100%
+      );
+  }
+
+  /* A whisper of dawn warmth low on the horizon — the hearth, barely lit */
+  .moonstone-dawn {
+    background: radial-gradient(
+      72% 55% at 50% 110%,
+      oklch(0.93 0.06 70 / 0.55) 0%,
+      transparent 64%
+    );
+  }
+
+  /* ── Moonstone glass: crisp frosted-white panels with a defined hairline ── */
+  .moonstone .hearth-glass {
+    background: oklch(1 0 0 / 0.66);
+    border: 1px solid oklch(0.52 0.04 285 / 0.14);
+    backdrop-filter: blur(26px) saturate(1.3);
+    -webkit-backdrop-filter: blur(26px) saturate(1.3);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.9) inset,
+      0 2px 10px oklch(0.4 0.04 285 / 0.05),
+      0 34px 70px -46px oklch(0.4 0.07 285 / 0.32);
+  }
+
+  /* Spotlight panels gain a soft periwinkle edge on hover */
+  .moonstone .spotlight-card {
+    transition: border-color 0.35s ease;
+  }
+  .moonstone .spotlight-card:hover {
+    border-color: oklch(0.52 0.18 286 / 0.3);
+  }
+
+  /* Frosted panels for Memories / Together list cards */
+  .moonstone .hearth-panel,
+  .moonstone .hearth-panel-raised {
+    background: oklch(1 0 0 / 0.66);
+    border: 1px solid oklch(0.52 0.04 285 / 0.14);
+    backdrop-filter: blur(26px) saturate(1.3);
+    -webkit-backdrop-filter: blur(26px) saturate(1.3);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.9) inset,
+      0 2px 10px oklch(0.4 0.04 285 / 0.05),
+      0 24px 56px -40px oklch(0.4 0.07 285 / 0.28);
+  }
+
+  /* Sticky chrome (mobile header, calendar toolbar) blends into the sky */
+  .moonstone .moonstone-chrome {
+    background: oklch(1 0 0 / 0.62);
+    border-color: oklch(0.52 0.04 285 / 0.12);
+    backdrop-filter: blur(26px) saturate(1.3);
+    -webkit-backdrop-filter: blur(26px) saturate(1.3);
+  }
+
+  /* Per-route atmosphere tints — same world, different rooms */
+  [data-moonstone="calendar"] .moonstone-bloom-left {
+    background-color: oklch(0.68 0.12 250 / 0.24);
+  }
+  [data-moonstone="calendar"] .moonstone-bloom-right {
+    background-color: oklch(0.72 0.1 265 / 0.2);
+  }
+
+  [data-moonstone="memories"] .moonstone-bloom-right {
+    background-color: oklch(0.78 0.12 55 / 0.22);
+  }
+  [data-moonstone="memories"] .moonstone-dawn {
+    background: radial-gradient(
+      72% 55% at 50% 110%,
+      oklch(0.9 0.08 65 / 0.62) 0%,
+      transparent 64%
+    );
+  }
+
+  [data-moonstone="together"] .moonstone-bloom-left {
+    background-color: oklch(0.72 0.13 286 / 0.22);
+  }
+  [data-moonstone="together"] .moonstone-bloom-right {
+    background-color: oklch(0.76 0.1 295 / 0.18);
+  }
+}
+
+/* =============================================================================
+   HEARTH — Memories (premium archive)
+   Editorial cards, cinematic timeline, glass filters — scoped under Moonstone.
+   ============================================================================= */
+@layer utilities {
+  /* ── Hero stat pills ───────────────────────────────────────────────────── */
+  .memory-stat-pill {
+    position: relative;
+    overflow: hidden;
+    background: oklch(1 0 0 / 0.55);
+    border: 1px solid oklch(0.52 0.04 285 / 0.12);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    box-shadow: 0 2px 12px oklch(0.4 0.04 285 / 0.06);
+  }
+
+  /* ── Filter chips ──────────────────────────────────────────────────────── */
+  .memory-filter-chip {
+    background: oklch(1 0 0 / 0.45);
+    border: 1px solid oklch(0.52 0.04 285 / 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .memory-filter-chip--active {
+    background: oklch(0.52 0.18 286 / 0.1);
+    border-color: oklch(0.52 0.18 286 / 0.28);
+    box-shadow: 0 0 0 1px oklch(0.52 0.18 286 / 0.08);
+  }
+
+  /* ── View switcher ─────────────────────────────────────────────────────── */
+  .memory-view-switcher {
+    background: oklch(1 0 0 / 0.5);
+    border: 1px solid oklch(0.52 0.04 285 / 0.12);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  }
+
+  /* ── Memory cards ──────────────────────────────────────────────────────── */
+  .memory-card {
+    background: oklch(1 0 0 / 0.62);
+    border: 1px solid oklch(0.52 0.04 285 / 0.13);
+    backdrop-filter: blur(24px) saturate(1.25);
+    -webkit-backdrop-filter: blur(24px) saturate(1.25);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.85) inset,
+      0 4px 16px oklch(0.4 0.04 285 / 0.06),
+      0 28px 60px -44px oklch(0.4 0.07 285 / 0.3);
+    transition:
+      border-color 0.35s ease,
+      box-shadow 0.35s ease;
+  }
+  .memory-card:hover {
+    border-color: oklch(0.52 0.18 286 / 0.28);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.9) inset,
+      0 8px 24px oklch(0.4 0.06 285 / 0.1),
+      0 36px 72px -42px oklch(0.48 0.1 285 / 0.38);
+  }
+  .memory-card--text {
+    background: linear-gradient(
+      145deg,
+      oklch(1 0 0 / 0.72) 0%,
+      oklch(0.97 0.02 285 / 0.65) 100%
+    );
+  }
+  .memory-card--compact {
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.85) inset,
+      0 2px 8px oklch(0.4 0.04 285 / 0.05),
+      0 16px 40px -32px oklch(0.4 0.07 285 / 0.22);
+  }
+  .memory-card--compact:hover {
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.9) inset,
+      0 4px 14px oklch(0.4 0.06 285 / 0.08),
+      0 20px 48px -28px oklch(0.48 0.1 285 / 0.3);
+  }
+  .memory-card-photo {
+    min-height: 5.5rem;
+  }
+
+  /* Mood pill */
+  .memory-mood-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 9999px;
+    padding: 0.25rem 0.625rem;
+    font-weight: 500;
+    background: oklch(0.52 0.18 286 / 0.08);
+    color: var(--foreground);
+  }
+
+  /* ── Detail modal (center popup) ───────────────────────────────────────── */
+  .memory-modal-backdrop {
+    background: oklch(0.2 0.02 285 / 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .memory-modal-panel {
+    background: oklch(0.99 0.006 285 / 0.94);
+    backdrop-filter: blur(32px) saturate(1.4);
+    -webkit-backdrop-filter: blur(32px) saturate(1.4);
+    border: 1px solid oklch(0.52 0.04 285 / 0.14);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.9) inset,
+      0 24px 80px -20px oklch(0.35 0.06 285 / 0.45),
+      0 8px 32px oklch(0.4 0.05 285 / 0.12);
+  }
+  .memory-modal-photo {
+    border-bottom: 1px solid oklch(0.52 0.04 285 / 0.08);
+  }
+
+  /* ── Timeline ──────────────────────────────────────────────────────────── */
+  .memory-year-marker {
+    background: linear-gradient(
+      180deg,
+      oklch(0.93 0.022 282 / 0.95) 0%,
+      oklch(0.93 0.022 282 / 0.7) 80%,
+      transparent 100%
+    );
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+  .memory-timeline-rail {
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      oklch(0.52 0.18 286 / 0.35) 8%,
+      oklch(0.78 0.12 55 / 0.3) 50%,
+      oklch(0.52 0.18 286 / 0.35) 92%,
+      transparent 100%
+    );
+  }
+  .memory-timeline-node {
+    background: oklch(0.52 0.18 286);
+    box-shadow:
+      0 0 0 3px oklch(0.52 0.18 286 / 0.18),
+      0 0 12px oklch(0.52 0.18 286 / 0.45);
+  }
+
+  /* ── Compose sheet ─────────────────────────────────────────────────────── */
+  .memory-compose-header {
+    background: oklch(1 0 0 / 0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .memory-compose-photo-drop {
+    border: 1.5px dashed oklch(0.52 0.04 285 / 0.22);
+    background: oklch(1 0 0 / 0.35);
+    transition:
+      border-color 0.3s ease,
+      background 0.3s ease;
+  }
+  .memory-compose-photo-drop:hover {
+    border-color: oklch(0.52 0.18 286 / 0.35);
+    background: oklch(0.52 0.18 286 / 0.04);
+  }
+
+  /* ── Map view ──────────────────────────────────────────────────────────── */
+  .memory-map-frame {
+    border: 1px solid oklch(0.52 0.04 285 / 0.14);
+    box-shadow:
+      0 4px 24px oklch(0.4 0.04 285 / 0.08),
+      0 32px 64px -40px oklch(0.4 0.07 285 / 0.28);
+  }
+  .memory-map-place-btn {
+    background: oklch(1 0 0 / 0.55);
+    border: 1px solid oklch(0.52 0.04 285 / 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .memory-map-place-btn:hover {
+    border-color: oklch(0.52 0.18 286 / 0.25);
+    background: oklch(1 0 0 / 0.72);
+  }
+  .memory-map-loading {
+    background: oklch(1 0 0 / 0.45);
+    border: 1px solid oklch(0.52 0.04 285 / 0.12);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 }

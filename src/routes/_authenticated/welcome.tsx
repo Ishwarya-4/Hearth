@@ -118,7 +118,7 @@ function WelcomePage() {
     setBusy(true);
     try {
       const result = await invitePartner(spaceId, email);
-      toast.success(result.kind === "added" ? "They're in 🤍" : "Invite saved — they'll join when they sign up");
+      toast.success(`Invite email sent to ${result.email}`);
       qc.invalidateQueries({ queryKey: ["space-people"] });
       qc.invalidateQueries({ queryKey: ["invitations"] });
       setEmail("");
@@ -182,7 +182,7 @@ function WelcomePage() {
           <motion.div
             className="h-full rounded-full bg-hearth"
             animate={{ width: `${((stepIndex + 1) / STEPS.length) * 100}%` }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
           />
         </div>
         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{stepIndex + 1}/{STEPS.length}</span>
@@ -460,7 +460,7 @@ function WelcomePage() {
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.42, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ delay: 0.42, duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
             >
               <h1 className="font-display text-3xl font-semibold leading-tight">You&apos;re ready</h1>
               <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
@@ -471,7 +471,7 @@ function WelcomePage() {
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.58, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ delay: 0.58, duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
               className="mt-4 inline-flex items-center gap-2 rounded-full bg-accent/80 px-4 py-2 text-sm text-accent-foreground"
             >
               <CalendarHeart className="h-4 w-4 text-primary" />
@@ -482,7 +482,7 @@ function WelcomePage() {
               className="mt-auto w-full pt-5"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ delay: 0.7, duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
             >
               <Button size="lg" variant="ember" className="w-full" onClick={finish}>
                 Open Hearth

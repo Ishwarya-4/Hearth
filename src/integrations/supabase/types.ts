@@ -205,6 +205,74 @@ export type Database = {
           },
         ];
       };
+      lists: {
+        Row: {
+          calendar_id: string;
+          created_at: string;
+          created_by: string;
+          id: string;
+          kind: string;
+          title: string;
+        };
+        Insert: {
+          calendar_id: string;
+          created_at?: string;
+          created_by: string;
+          id?: string;
+          kind?: string;
+          title: string;
+        };
+        Update: {
+          calendar_id?: string;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          kind?: string;
+          title?: string;
+        };
+        Relationships: [];
+      };
+      list_items: {
+        Row: {
+          body: string;
+          created_at: string;
+          created_by: string;
+          done: boolean;
+          done_by: string | null;
+          id: string;
+          list_id: string;
+          position: number;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          created_by: string;
+          done?: boolean;
+          done_by?: string | null;
+          id?: string;
+          list_id: string;
+          position?: number;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          created_by?: string;
+          done?: boolean;
+          done_by?: string | null;
+          id?: string;
+          list_id?: string;
+          position?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "list_items_list_id_fkey";
+            columns: ["list_id"];
+            isOneToOne: false;
+            referencedRelation: "lists";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       moments: {
         Row: {
           body: string | null;

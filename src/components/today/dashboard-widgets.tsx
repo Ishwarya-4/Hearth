@@ -1,8 +1,16 @@
 import { animate, motion, useReducedMotion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ArrowUpRight, CalendarHeart, ChevronRight, Sparkles, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+
+// Pointer-tracking glow: feeds the `.spotlight-card::before` radial via CSS vars.
+function trackSpotlight(e: MouseEvent<HTMLElement>) {
+  const el = e.currentTarget;
+  const r = el.getBoundingClientRect();
+  el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+  el.style.setProperty("--my", `${e.clientY - r.top}px`);
+}
 
 // ─── Cinematic settle-in: expo-out easing, scale collapses on arrival ────────
 const stagger = {
@@ -21,7 +29,7 @@ const settleIn = {
     scale: 1,
     transition: {
       duration: 0.62,
-      ease: [0.16, 1, 0.3, 1],
+      ease: [0.16, 1, 0.3, 1] as const,
       opacity: { duration: 0.38, ease: "easeOut" },
     },
   },
@@ -73,18 +81,187 @@ export function TimeOfDayBanner() {
   );
 }
 
+export type MoonstoneVariant = "today" | "calendar" | "memories" | "together";
+
+export const MOONSTONE_ROUTES = ["/today", "/calendar", "/memories", "/together"] as const;
+
+export function isMoonstoneRoute(pathname: string) {
+  return MOONSTONE_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+export function moonstoneVariant(pathname: string): MoonstoneVariant {
+  if (pathname.startsWith("/calendar")) return "calendar";
+  if (pathname.startsWith("/memories")) return "memories";
+  if (pathname.startsWith("/together")) return "together";
+  return "today";
+}
+
+// ─── Moonstone stage: full-bleed "pale dawn" atmosphere for the main app ─────
+// A fixed lavender sky — soft periwinkle/blue blooms that drift and breathe,
+// a whisper of dawn warmth low on the horizon, fine grain. Offset by the
+// sidebar/rail width so it fills only the content column. Subtle per-route
+// tints keep each destination feeling like the same world, different room.
+export function MoonstoneAtmosphere({ variant = "today" }: { variant?: MoonstoneVariant }) {
+  const reduced = useReducedMotion();
+  return (
+    <div
+      aria-hidden
+      data-moonstone={variant}
+      className="pointer-events-none fixed inset-y-0 left-0 right-0 z-0 overflow-hidden md:left-[72px] lg:left-64"
+    >
+      <div className="moonstone-sky absolute inset-0" />
+      <div className="aurora" />
+
+      {/* Soft drifting light blooms */}
+      <div
+        className={cn(
+          "moonstone-bloom-left absolute -left-12 top-[12%] h-72 w-72 rounded-full bg-[oklch(0.7_0.14_286)]/20 blur-[90px]",
+          !reduced && "animate-float-y",
+        )}
+      />
+      <div
+        className={cn(
+          "moonstone-bloom-right absolute right-[5%] top-[2%] h-80 w-80 rounded-full bg-[oklch(0.74_0.1_250)]/18 blur-[100px]",
+          !reduced && "animate-breathe",
+        )}
+      />
+
+      {/* A whisper of dawn warmth low on the horizon */}
+      <div className={cn("moonstone-dawn absolute inset-x-0 bottom-0 h-1/2", !reduced && "animate-breathe")} />
+
+      {/* Fine grain to kill gradient banding */}
+      <div className="grain absolute inset-0" />
+
+      {/* Soft top fade so the sticky mobile chrome blends into the sky */}
+      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[oklch(0.95_0.02_284)] to-transparent" />
+    </div>
+  );
+}
+
+// ─── Spotlight glass panel: pointer-following glow + hover lift ───────────────
+export function SpotlightPanel({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const reduced = useReducedMotion();
+  return (
+    <motion.section
+      onMouseMove={trackSpotlight}
+      whileHover={reduced ? undefined : { y: -4 }}
+      transition={{ type: "spring", stiffness: 320, damping: 26 }}
+      className={cn("spotlight-card hearth-glass rounded-2xl", className)}
+    >
+      {children}
+    </motion.section>
+  );
+}
+
+// ─── Live clock: current time, refreshed each half-minute ────────────────────
+export function LiveClock({ className }: { className?: string }) {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  if (!now) return null;
+  return (
+    <span className={cn("tabular-nums", className)}>
+      {now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+    </span>
+  );
+}
+
+// ─── Featured countdown: the dashboard's hero spotlight ──────────────────────
+export function FeaturedCountdown({
+  days,
+  label,
+  title,
+  dateLabel,
+  color = "oklch(0.56 0.19 280)",
+  goingCount = 0,
+}: {
+  days: number;
+  label: string;
+  title: string;
+  dateLabel: string;
+  color?: string;
+  goingCount?: number;
+}) {
+  return (
+    <Link to="/calendar" className="group block">
+      <div
+        onMouseMove={trackSpotlight}
+        className="spotlight-card relative overflow-hidden rounded-3xl border border-hearth/15 p-6 shadow-[0_40px_100px_-58px_oklch(0.5_0.16_286/0.5)] sm:p-8"
+        style={{
+          background:
+            "linear-gradient(140deg, oklch(0.985 0.018 288) 0%, oklch(0.965 0.03 300) 55%, oklch(0.98 0.022 250) 100%)",
+        }}
+      >
+        {/* floating glow */}
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-[oklch(0.7_0.17_288)]/30 blur-3xl" aria-hidden />
+        <div className="pointer-events-none absolute -bottom-16 left-1/4 h-40 w-40 rounded-full bg-[oklch(0.85_0.12_70)]/30 blur-3xl" aria-hidden />
+
+        <div className="relative flex flex-col items-start gap-7 sm:flex-row sm:items-center sm:gap-9">
+          <div className="relative shrink-0">
+            <CountdownRing days={days} color={color} size={140} />
+            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground backdrop-blur">
+              {days <= 0 ? "happening" : days === 1 ? "day to go" : "days to go"}
+            </span>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <span className="inline-flex items-center gap-2 text-overline text-hearth">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-hearth-muted">
+                <CalendarHeart className="h-3.5 w-3.5" />
+              </span>
+              Looking forward to
+            </span>
+            <p className="mt-3 truncate font-display text-[1.65rem] font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
+              {title}
+            </p>
+            <p className="mt-1.5 text-sm text-muted-foreground">{dateLabel}</p>
+            <div className="mt-5 flex items-center gap-3">
+              <span className="rounded-full bg-hearth px-3 py-1 text-xs font-semibold text-primary-foreground shadow-[0_4px_14px_-4px_oklch(0.56_0.19_285/0.6)]">
+                {label}
+              </span>
+              {goingCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                  <Users className="h-3.5 w-3.5" /> {goingCount} going
+                </span>
+              )}
+              <span className="ml-auto inline-flex translate-x-0 items-center gap-1 text-sm font-medium text-hearth transition-transform duration-300 group-hover:translate-x-1">
+                View in calendar <ArrowUpRight className="h-4 w-4" />
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 // ─── Countdown ring: spring number counter + outer breathing glow ring ────────
 export function CountdownRing({
   days,
   maxDays = 30,
   color = "oklch(0.56 0.19 280)",
+  size = 88,
 }: {
   days: number;
   maxDays?: number;
   color?: string;
+  /** Outer diameter in px — the ring scales proportionally. */
+  size?: number;
 }) {
   const reduced = useReducedMotion();
-  const r = 36;
+  const k = size / 88;
+  const r = 36 * k;
+  const sw = 5 * k;
+  const center = size / 2;
   const c = 2 * Math.PI * r;
   const progress = Math.min(days / maxDays, 1);
   const offset = c * (1 - progress);
@@ -105,46 +282,59 @@ export function CountdownRing({
   }, [days]);
 
   return (
-    <div className="relative inline-flex h-[88px] w-[88px] items-center justify-center">
-      <svg className="h-full w-full -rotate-90" viewBox="0 0 88 88" aria-hidden>
+    <div
+      className="relative inline-flex items-center justify-center"
+      style={{ height: size, width: size }}
+    >
+      <svg className="h-full w-full -rotate-90" viewBox={`0 0 ${size} ${size}`} aria-hidden>
+        <defs>
+          <linearGradient id="cd-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="oklch(0.68 0.19 286)" />
+            <stop offset="55%" stopColor="oklch(0.6 0.2 298)" />
+            <stop offset="100%" stopColor="oklch(0.62 0.16 250)" />
+          </linearGradient>
+        </defs>
         {/* Outer glow ring breathes at rest */}
         {!reduced && (
           <motion.circle
-            cx="44" cy="44"
-            r={r + 7}
+            cx={center} cy={center}
+            r={r + 7 * k}
             fill="none"
             stroke={color}
-            strokeWidth="1.5"
+            strokeWidth={1.5 * k}
             animate={{
               strokeOpacity: [0.1, 0.28, 0.1],
-              r: [r + 7, r + 9.5, r + 7],
+              r: [r + 7 * k, r + 9.5 * k, r + 7 * k],
             }}
             transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
           />
         )}
         {/* Track */}
         <circle
-          cx="44" cy="44" r={r}
+          cx={center} cy={center} r={r}
           fill="none"
           stroke="currentColor"
-          strokeWidth="5"
-          className="text-muted/80"
+          strokeWidth={sw}
+          className="text-muted/70"
         />
         {/* Progress arc draws in with expo-out spring */}
         <motion.circle
-          cx="44" cy="44" r={r}
+          cx={center} cy={center} r={r}
           fill="none"
-          stroke={color}
-          strokeWidth="5"
+          stroke="url(#cd-grad)"
+          strokeWidth={sw}
           strokeLinecap="round"
           strokeDasharray={c}
           initial={reduced ? { strokeDashoffset: offset } : { strokeDashoffset: c }}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.25, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 1.25, ease: [0.16, 1, 0.3, 1] as const }}
         />
       </svg>
       {/* Spring-counted number */}
-      <span className="absolute text-2xl font-semibold tabular-nums tracking-tight">
+      <span
+        className="absolute font-semibold tabular-nums tracking-tight leading-none"
+        style={{ fontSize: 26 * k }}
+      >
         {displayNum}
       </span>
     </div>

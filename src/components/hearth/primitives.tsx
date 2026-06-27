@@ -6,22 +6,31 @@ export function Panel({
   className,
   raised,
   glass,
+  interactive,
 }: {
   children: ReactNode;
   className?: string;
   raised?: boolean;
   glass?: boolean;
+  /** Adds a tasteful hover-lift for tappable cards. */
+  interactive?: boolean;
 }) {
   return (
     <section
       className={cn(
         glass ? "hearth-glass" : raised ? "hearth-panel-raised" : "hearth-panel",
+        interactive && "hover-lift",
         className,
       )}
     >
       {children}
     </section>
   );
+}
+
+/** Shimmer placeholder for loading states. Compose with width/height classes. */
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cn("skeleton", className)} aria-hidden />;
 }
 
 export function Overline({ children, className }: { children: ReactNode; className?: string }) {

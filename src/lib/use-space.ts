@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { ProfileLike } from "@/components/calendar/user-avatar";
-import type { Database } from "@/integrations/supabase/types";
+import { pickSharedSpace, type Space } from "@/lib/space";
 
-export type Space = Database["public"]["Tables"]["calendars"]["Row"];
+export type { Space };
 
 /**
  * The shared world for the signed-in person: the (non-personal) Space calendar
@@ -18,9 +18,9 @@ export function useSpace(userId: string) {
       const { data, error } = await supabase
         .from("calendars")
         .select("*")
-        .order("is_personal", { ascending: true });
+        .order("created_at", { ascending: true });
       if (error) throw error;
-      return (data.find((c) => !c.is_personal) ?? data[0] ?? null) as Space | null;
+      return pickSharedSpace(data ?? [], userId);
     },
   });
   const space = spaceQ.data ?? null;

@@ -73,6 +73,14 @@ function TimeGridView({ view, anchor, events, profilesById, calendarColorById, o
 
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
+  // Live "now" indicator — ticks each minute.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
   // ---- drag-to-reschedule (timed, non-recurring events) ----
   const gridRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ ev: EventRow; startX: number; startY: number; dayIndex: number } | null>(null);
@@ -133,7 +141,7 @@ function TimeGridView({ view, anchor, events, profilesById, calendarColorById, o
           const today = isSameDay(d, new Date());
           return (
             <div key={d.toISOString()} className="flex-1 px-2 py-2 text-center border-l first:border-l-0">
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              <div className={cn("text-[11px] font-medium uppercase tracking-wider", today ? "text-hearth" : "text-muted-foreground")}>
                 {d.toLocaleDateString([], { weekday: "short" })}
               </div>
               <div className={cn(
@@ -211,9 +219,9 @@ function TimeGridView({ view, anchor, events, profilesById, calendarColorById, o
                         onEventClick(ev);
                       }}
                       className={cn(
-                        "absolute left-1 right-1 rounded-md px-1.5 py-1 text-left text-[11px] leading-tight shadow-sm hover:brightness-95 transition-[filter] overflow-hidden",
+                        "absolute left-1 right-1 rounded-lg px-2 py-1 text-left text-[11px] leading-tight shadow-sm transition-[filter,box-shadow] hover:brightness-[0.97] overflow-hidden",
                         draggable && "cursor-grab active:cursor-grabbing",
-                        isDragged && "z-20 ring-2 ring-primary/60 shadow-lg",
+                        isDragged ? "z-20 ring-2 ring-hearth/60 shadow-lg" : "ring-1 ring-inset ring-black/5",
                       )}
                       style={{ top, height, background: color + "22", borderLeft: `3px solid ${color}`, transform, touchAction: "none" }}
                     >
@@ -230,6 +238,18 @@ function TimeGridView({ view, anchor, events, profilesById, calendarColorById, o
                     </button>
                   );
                 })}
+
+                {isSameDay(d, now) && (
+                  <div
+                    className="pointer-events-none absolute inset-x-0 z-30"
+                    style={{ top: (nowMinutes / 60) * HOUR_HEIGHT }}
+                    aria-hidden
+                  >
+                    <div className="relative h-px bg-hearth/80">
+                      <span className="absolute -left-[3px] top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-hearth ring-2 ring-card" />
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -287,8 +307,8 @@ function MonthView({ anchor, events, profilesById, calendarColorById, attendance
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border bg-card shadow-warm">
-      <div className="grid grid-cols-7 border-b bg-card text-center text-[11px] uppercase tracking-wider text-muted-foreground">
-        {weekdays.map((d) => (<div key={d} className="py-2">{d}</div>))}
+      <div className="grid grid-cols-7 border-b bg-card text-center text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        {weekdays.map((d) => (<div key={d} className="py-2.5">{d}</div>))}
       </div>
       <div className="grid flex-1 grid-cols-7 grid-rows-6">
         {grid.map((d, i) => {
@@ -298,8 +318,9 @@ function MonthView({ anchor, events, profilesById, calendarColorById, attendance
           return (
             <div
               key={i}
-              className={cn("border-b border-l p-1 min-h-0 overflow-hidden flex flex-col gap-0.5 cursor-pointer hover:bg-accent/30 transition",
-                !inMonth && "bg-muted/30 text-muted-foreground",
+              className={cn("border-b border-l p-1.5 min-h-0 overflow-hidden flex flex-col gap-0.5 cursor-pointer transition-colors hover:bg-accent/40",
+                !inMonth && "bg-muted/20 text-muted-foreground",
+                today && "bg-hearth/[0.045]",
                 i % 7 === 0 && "border-l-0",
               )}
               onClick={() => { const s = new Date(d); s.setHours(9, 0, 0, 0); onSlotClick(s); }}

@@ -1,9 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppFrame } from "@/components/app-frame";
-import { Panel, Overline, EmptyState } from "@/components/hearth";
+import { Overline, EmptyState, Skeleton } from "@/components/hearth";
 import {
   EmberButton,
   GhostButton,
@@ -19,12 +19,13 @@ import { UserAvatar } from "@/components/calendar/user-avatar";
 import { toast } from "sonner";
 import {
   AheadEmptyActions,
-  CountdownRing,
   DashboardItem,
   DashboardStagger,
   EventRowVisual,
+  FeaturedCountdown,
+  LiveClock,
   QuietDayCard,
-  TimeOfDayBanner,
+  SpotlightPanel,
   TodayEmptyActions,
   WeekStrip,
 } from "@/components/today/dashboard-widgets";
@@ -34,7 +35,6 @@ import { errorMessage, invitePartner } from "@/lib/space";
 import { useSpace } from "@/lib/use-space";
 import { haptic } from "@/lib/haptics";
 import { addDays, expandRecurring, fmtTime, isSameDay, startOfDay, startOfWeek } from "@/lib/calendar-utils";
-import { cn } from "@/lib/utils";
 import type { EventRow } from "@/components/calendar/calendar-view";
 import type { ProfileLike } from "@/components/calendar/user-avatar";
 import type { Database } from "@/integrations/supabase/types";
@@ -43,6 +43,9 @@ type Moment = Database["public"]["Tables"]["moments"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/today")({
   head: () => ({ meta: [{ title: "Today — Hearth" }] }),
+  validateSearch: (search: Record<string, unknown>): { compose?: boolean } => ({
+    compose: search.compose === true || search.compose === "true",
+  }),
   component: TodayPage,
 });
 
@@ -71,6 +74,8 @@ function countdownLabel(n: number) {
 
 function TodayPage() {
   const { user } = Route.useRouteContext();
+  const { compose } = Route.useSearch();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const prompt = useMemo(() => promptForDate(), []);
   const today = todayISODate();
@@ -81,6 +86,14 @@ function TodayPage() {
   const [mood, setMood] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Quick-add "Answer today's question" deep-links here with ?compose=1.
+  useEffect(() => {
+    if (compose) {
+      setSheetOpen(true);
+      navigate({ to: "/today", search: {}, replace: true });
+    }
+  }, [compose, navigate]);
 
   const eventsQ = useQuery({
     queryKey: ["space-events", space?.id],
@@ -172,6 +185,18 @@ function TodayPage() {
   const firstName = me?.full_name?.split(" ")[0] ?? "";
   const bothEmpty = todaysEvents.length === 0 && !nextEvent;
   const countdownDays = nextEvent ? daysUntil(new Date(nextEvent.start_at)) : 0;
+  const aheadPhrase =
+    countdownDays <= 0 ? "later today" : countdownDays === 1 ? "tomorrow" : `in ${countdownDays} days`;
+  const daySummary = bothEmpty
+    ? "A calm, open day — fill it or just check in."
+    : [
+        todaysEvents.length > 0
+          ? `${todaysEvents.length} ${todaysEvents.length === 1 ? "thing" : "things"} on today`
+          : "Nothing scheduled today",
+        nextEvent ? `${nextEvent.title} ${aheadPhrase}` : null,
+      ]
+        .filter(Boolean)
+        .join("  ·  ");
 
   function refresh() { qc.invalidateQueries({ queryKey: ["moments-today"] }); }
 
@@ -209,10 +234,27 @@ function TodayPage() {
   }
 
   return (
-    <AppFrame userId={user.id} maxWidth="wide" onQuickAddQuestion={openCompose}>
+    <AppFrame userId={user.id} maxWidth="wide">
+      <div className="relative min-h-[calc(100dvh-7rem)]">
       {spaceQ.isLoading && (
-        <div className="flex justify-center py-24">
-          <span className="h-5 w-5 animate-pulse rounded-full bg-muted-foreground/30" aria-label="Loading" />
+        <div aria-label="Loading" aria-busy="true">
+          <div className="mb-8 space-y-3">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-9 w-56 rounded-lg" />
+          </div>
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_280px]">
+            <div className="flex flex-col gap-5">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Skeleton className="h-40 rounded-xl" />
+                <Skeleton className="h-40 rounded-xl" />
+              </div>
+              <Skeleton className="h-60 rounded-xl" />
+            </div>
+            <div className="flex flex-col gap-5">
+              <Skeleton className="h-44 rounded-xl" />
+              <Skeleton className="h-44 rounded-xl" />
+            </div>
+          </div>
         </div>
       )}
 
@@ -225,19 +267,35 @@ function TodayPage() {
       )}
 
       {space && (
-        <>
+        <div className="relative">
           {/* Hero header */}
-          <header className="relative mb-8">
-            <TimeOfDayBanner />
-            <Overline>{dateLabel}</Overline>
-            <div className="relative mt-1 flex flex-wrap items-end justify-between gap-4">
-              <h1 className="text-display text-foreground">
-                {greeting()}{firstName ? `, ${firstName}` : ""}
-              </h1>
+          <header className="relative z-10 mb-8 sm:mb-10">
+            {/* Localized periwinkle bloom behind the greeting */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -left-8 -top-12 h-44 w-80 rounded-full bg-hearth/20 blur-[80px]"
+            />
+            <div className="relative flex flex-wrap items-end justify-between gap-5">
+              <div className="min-w-0">
+                <p className="flex items-center gap-2.5 text-overline text-hearth">
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-hearth shadow-[0_0_10px_oklch(0.52_0.18_286/0.55)]"
+                    aria-hidden
+                  />
+                  {dateLabel}
+                  <span className="h-1 w-1 rounded-full bg-muted-foreground/50" aria-hidden />
+                  <LiveClock className="text-muted-foreground" />
+                </p>
+                <h1 className="mt-3 font-display text-[2.5rem] font-semibold leading-[1.02] tracking-tight text-foreground sm:text-[3.25rem]">
+                  {greeting()}
+                  {firstName ? <>, <span className="text-gradient-peri">{firstName}</span></> : ""}
+                </h1>
+                <p className="mt-3 max-w-md text-[0.95rem] leading-relaxed text-muted-foreground">{daySummary}</p>
+              </div>
               {me && (
-                <div className="flex items-center -space-x-2">
+                <div className="flex items-center -space-x-2.5">
                   {[me, ...others].map((p) => (
-                    <span key={p.id} className="relative rounded-full ring-2 ring-background">
+                    <span key={p.id} className="relative rounded-full ring-2 ring-background transition-transform hover:z-10 hover:-translate-y-0.5">
                       <UserAvatar profile={p} size="md" ring />
                       {sharedTodayIds.has(p.id) && (
                         <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-hearth ring-2 ring-background" aria-label="Shared today" />
@@ -249,27 +307,49 @@ function TodayPage() {
             </div>
           </header>
 
-          <DashboardStagger className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_280px] xl:items-start">
-            <div className="flex flex-col gap-5">
-              {others.length === 0 && peopleQ.isSuccess && (
-                <DashboardItem>
-                  <Panel glass className="p-5">
-                    <InviteStrip spaceId={space.id} />
-                  </Panel>
-                </DashboardItem>
-              )}
+          <DashboardStagger className="relative z-10 flex flex-col gap-5">
+            {others.length === 0 && peopleQ.isSuccess && (
+              <DashboardItem>
+                <SpotlightPanel className="p-5">
+                  <InviteStrip spaceId={space.id} />
+                </SpotlightPanel>
+              </DashboardItem>
+            )}
 
-              {bothEmpty && (
-                <DashboardItem>
-                  <QuietDayCard onCheckIn={openCompose} />
-                </DashboardItem>
-              )}
+            {/* Featured spotlight — the hero of the dashboard */}
+            {bothEmpty ? (
+              <DashboardItem>
+                <QuietDayCard onCheckIn={openCompose} />
+              </DashboardItem>
+            ) : nextEvent ? (
+              <DashboardItem>
+                <FeaturedCountdown
+                  days={countdownDays}
+                  label={countdownLabel(countdownDays)}
+                  title={nextEvent.title}
+                  color={space.color}
+                  goingCount={goingCountByEvent[nextEvent.base_id ?? nextEvent.id] ?? 0}
+                  dateLabel={new Date(nextEvent.start_at).toLocaleDateString([], {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                />
+              </DashboardItem>
+            ) : null}
 
-              {!bothEmpty && (
-                <div className="grid gap-5 sm:grid-cols-2">
+            {/* Main bento grid */}
+            <div className="grid gap-5 xl:grid-cols-[1fr_300px] xl:items-start">
+              <div className="flex flex-col gap-5">
+                {!bothEmpty && (
                   <DashboardItem>
-                    <Panel glass className="p-5 sm:p-6">
-                      <Overline>Next up</Overline>
+                    <SpotlightPanel className="p-5 sm:p-6">
+                      <div className="flex items-center justify-between">
+                        <Overline>Today</Overline>
+                        <Link to="/calendar" className="text-xs font-medium text-hearth hover:underline">
+                          Open calendar
+                        </Link>
+                      </div>
                       {todaysEvents.length === 0 ? (
                         <TodayEmptyActions onCheckIn={openCompose} />
                       ) : (
@@ -285,144 +365,117 @@ function TodayPage() {
                           ))}
                         </ul>
                       )}
-                    </Panel>
+                    </SpotlightPanel>
                   </DashboardItem>
+                )}
 
+                {!bothEmpty && !nextEvent && (
                   <DashboardItem>
-                    <Panel
-                      glass
-                      raised
-                      className={cn(
-                        "relative overflow-hidden p-5 sm:p-6",
-                        nextEvent && "border-hearth/20",
-                      )}
-                    >
-                      {nextEvent && (
-                        <div
-                          className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-hearth/10 blur-2xl"
-                          aria-hidden
-                        />
-                      )}
+                    <SpotlightPanel className="p-5 sm:p-6">
                       <Overline>Looking forward to</Overline>
-                      {nextEvent ? (
-                        <Link to="/calendar" className="relative mt-4 flex items-center gap-4 group">
-                          <CountdownRing days={countdownDays} color={space.color} />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-hearth">{countdownLabel(countdownDays)}</p>
-                            <p className="mt-0.5 text-title truncate">{nextEvent.title}</p>
-                            <p className="mt-1 text-caption">
-                              {new Date(nextEvent.start_at).toLocaleDateString([], {
-                                weekday: "long",
-                                month: "long",
-                                day: "numeric",
-                              })}
-                            </p>
-                          </div>
-                          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                        </Link>
-                      ) : (
-                        <AheadEmptyActions />
-                      )}
-                    </Panel>
+                      <AheadEmptyActions />
+                    </SpotlightPanel>
                   </DashboardItem>
-                </div>
-              )}
+                )}
 
-              {/* Daily question */}
-              <DashboardItem>
-                <Panel glass className="relative overflow-hidden p-5 sm:p-6">
-                  {!mine && (
-                    <div className="pointer-events-none absolute -left-4 top-0 h-24 w-24 rounded-full bg-hearth/8 blur-2xl" aria-hidden />
-                  )}
-                  <div className="relative flex items-center justify-between">
-                    <Overline>Today&apos;s question</Overline>
-                    {!mine && (
-                      <Button variant="ghost" size="sm" onClick={openCompose} className="text-hearth">
-                        Answer <ChevronRight className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                  <PromptHero prompt={prompt.text} answered={!!mine} onTap={openCompose} />
-                  {mine && <YourMoment moment={mine} you={profileById[user.id]} onEdit={undoMine} />}
-
-                  {others.length > 0 && (
-                    <section className="relative mt-6 border-t border-border pt-6">
-                      {!mine ? (
-                        <Seal partnerName={others[0]?.full_name?.split(" ")[0] || "them"} waiting={theirs.length > 0} />
-                      ) : theirs.length > 0 ? (
-                        <div className="space-y-4">
-                          <Overline>What they kept</Overline>
-                          {theirs.map((m) => (
-                            <MomentReveal key={m.id} moment={m} who={profileById[m.created_by]} animate />
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-caption">Nothing from them yet — you got here first.</p>
-                      )}
-                    </section>
-                  )}
-                </Panel>
-              </DashboardItem>
-
-              {(lastYearQ.data?.length ?? 0) > 0 && (
+                {/* Daily question */}
                 <DashboardItem>
-                  <Panel glass className="p-5 sm:p-6">
-                    <Overline>One year ago today</Overline>
-                    <div className="mt-4 space-y-4">
-                      {lastYearQ.data!.map((m) => (
-                        <MomentReveal key={m.id} moment={m} who={profileById[m.created_by]} faded animate={false} />
-                      ))}
+                  <SpotlightPanel className="relative overflow-hidden p-5 sm:p-6">
+                    {!mine && (
+                      <div className="pointer-events-none absolute -left-4 top-0 h-24 w-24 rounded-full bg-hearth/10 blur-2xl" aria-hidden />
+                    )}
+                    <div className="relative flex items-center justify-between">
+                      <Overline>Today&apos;s question</Overline>
+                      {!mine && (
+                        <Button variant="ghost" size="sm" onClick={openCompose} className="text-hearth">
+                          Answer <ChevronRight className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
-                  </Panel>
-                </DashboardItem>
-              )}
-            </div>
+                    <PromptHero prompt={prompt.text} answered={!!mine} onTap={openCompose} />
+                    {mine && <YourMoment moment={mine} you={profileById[user.id]} onEdit={undoMine} />}
 
-            {/* Right rail */}
-            <aside className="flex flex-col gap-5">
-              <DashboardItem>
-                <Panel glass className="p-5">
-                  <Overline>This week</Overline>
-                  <WeekStrip days={weekDays} />
-                </Panel>
-              </DashboardItem>
-
-              <DashboardItem>
-                <Panel glass className="p-5">
-                  <Overline>Your people</Overline>
-                  <ul className="mt-4 space-y-3">
-                    {[me, ...others].filter(Boolean).map((p) => (
-                      <li key={(p as ProfileLike).id} className="flex items-center gap-2.5">
-                        <UserAvatar profile={p as ProfileLike} size="sm" ring />
-                        <span className="flex-1 truncate text-sm">
-                          {(p as ProfileLike).id === user.id ? "You" : (p as ProfileLike).full_name || (p as ProfileLike).email}
-                        </span>
-                        {sharedTodayIds.has((p as ProfileLike).id) && (
-                          <span className="text-[11px] font-medium text-hearth">shared</span>
+                    {others.length > 0 && (
+                      <section className="relative mt-6 border-t border-border pt-6">
+                        {!mine ? (
+                          <Seal partnerName={others[0]?.full_name?.split(" ")[0] || "them"} waiting={theirs.length > 0} />
+                        ) : theirs.length > 0 ? (
+                          <div className="space-y-4">
+                            <Overline>What they kept</Overline>
+                            {theirs.map((m) => (
+                              <MomentReveal key={m.id} moment={m} who={profileById[m.created_by]} animate />
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-caption">Nothing from them yet — you got here first.</p>
                         )}
-                      </li>
-                    ))}
-                  </ul>
-                  {others.length === 0 && (
-                    <p className="mt-3 text-caption">Invite someone to make it warmer.</p>
-                  )}
-                </Panel>
-              </DashboardItem>
+                      </section>
+                    )}
+                  </SpotlightPanel>
+                </DashboardItem>
 
-              <DashboardItem>
-                <Panel glass className="p-5">
-                  <Overline>Explore</Overline>
-                  <nav className="mt-3 space-y-1">
-                    <QuickLink to="/calendar" icon={<CalendarPlus className="h-4 w-4" />} label="Full calendar" />
-                    <QuickLink to="/memories" icon={<Sparkles className="h-4 w-4" />} label="All memories" />
-                    <QuickLink to="/together" icon={<Users className="h-4 w-4" />} label="Lists & goals" />
-                  </nav>
-                </Panel>
-              </DashboardItem>
-            </aside>
+                {(lastYearQ.data?.length ?? 0) > 0 && (
+                  <DashboardItem>
+                    <SpotlightPanel className="relative overflow-hidden p-5 sm:p-6">
+                      <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-[oklch(0.72_0.13_305)]/15 blur-2xl" aria-hidden />
+                      <Overline>One year ago today</Overline>
+                      <div className="mt-4 space-y-4">
+                        {lastYearQ.data!.map((m) => (
+                          <MomentReveal key={m.id} moment={m} who={profileById[m.created_by]} faded animate={false} />
+                        ))}
+                      </div>
+                    </SpotlightPanel>
+                  </DashboardItem>
+                )}
+              </div>
+
+              {/* Right rail */}
+              <aside className="flex flex-col gap-5">
+                <DashboardItem>
+                  <SpotlightPanel className="p-5">
+                    <Overline>This week</Overline>
+                    <WeekStrip days={weekDays} />
+                  </SpotlightPanel>
+                </DashboardItem>
+
+                <DashboardItem>
+                  <SpotlightPanel className="p-5">
+                    <Overline>Your people</Overline>
+                    <ul className="mt-4 space-y-3">
+                      {[me, ...others].filter(Boolean).map((p) => (
+                        <li key={(p as ProfileLike).id} className="flex items-center gap-2.5">
+                          <UserAvatar profile={p as ProfileLike} size="sm" ring />
+                          <span className="flex-1 truncate text-sm">
+                            {(p as ProfileLike).id === user.id ? "You" : (p as ProfileLike).full_name || (p as ProfileLike).email}
+                          </span>
+                          {sharedTodayIds.has((p as ProfileLike).id) && (
+                            <span className="text-[11px] font-medium text-hearth">shared</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    {others.length === 0 && (
+                      <p className="mt-3 text-caption">Invite someone to make it warmer.</p>
+                    )}
+                  </SpotlightPanel>
+                </DashboardItem>
+
+                <DashboardItem>
+                  <SpotlightPanel className="p-5">
+                    <Overline>Explore</Overline>
+                    <nav className="mt-3 space-y-1">
+                      <QuickLink to="/calendar" icon={<CalendarPlus className="h-4 w-4" />} label="Full calendar" />
+                      <QuickLink to="/memories" icon={<Sparkles className="h-4 w-4" />} label="All memories" />
+                      <QuickLink to="/together" icon={<Users className="h-4 w-4" />} label="Lists & goals" />
+                    </nav>
+                  </SpotlightPanel>
+                </DashboardItem>
+              </aside>
+            </div>
           </DashboardStagger>
-        </>
+        </div>
       )}
+      </div>
 
       {space && (
         <RitualSheet
@@ -443,10 +496,15 @@ function TodayPage() {
 
 function QuickLink({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
   return (
-    <Link to={to} className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
-      {icon}
-      {label}
-      <ChevronRight className="ml-auto h-3.5 w-3.5 opacity-50" />
+    <Link
+      to={to}
+      className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm text-foreground transition-colors hover:bg-accent/70"
+    >
+      <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-hearth-muted text-hearth transition-transform duration-200 group-hover:scale-110">
+        {icon}
+      </span>
+      <span className="flex-1 font-medium">{label}</span>
+      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-hearth" />
     </Link>
   );
 }
@@ -463,7 +521,7 @@ function InviteStrip({ spaceId }: { spaceId: string }) {
     setBusy(true);
     try {
       const result = await invitePartner(spaceId, email);
-      toast.success(result.kind === "added" ? "They're in" : "Invite sent");
+      toast.success(`Invite email sent to ${result.email}`);
       qc.invalidateQueries({ queryKey: ["space-people"] });
       setOpen(false);
       setEmail("");

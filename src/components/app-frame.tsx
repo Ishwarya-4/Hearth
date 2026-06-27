@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Wordmark } from "@/components/wordmark";
@@ -16,6 +16,11 @@ import {
   Moon, Plus, Sun, Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  isMoonstoneRoute,
+  MoonstoneAtmosphere,
+  moonstoneVariant,
+} from "@/components/today/dashboard-widgets";
 
 export type Destination = { to: string; label: string; icon: LucideIcon; description: string };
 
@@ -275,7 +280,7 @@ function MobileTopBar({
 }) {
   const { space } = useSpace(userId);
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/40 bg-background/80 px-4 backdrop-blur-xl md:hidden">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/40 bg-background/80 px-4 backdrop-blur-xl moonstone-chrome md:hidden">
       <Link to="/today" aria-label="Hearth home">
         <Wordmark size="sm" withName={false} />
       </Link>
@@ -290,6 +295,53 @@ function MobileTopBar({
   );
 }
 
+/**
+ * Persistent app shell — rendered ONCE by the `_authenticated` layout so the
+ * sidebar, rail, ambient wash, and bottom nav never unmount between tab
+ * switches. Only the page content (inside <AppFrame/>) swaps, which keeps the
+ * active-nav pill gliding and eliminates the inter-route flash.
+ */
+export function AppShell({ userId, children }: { userId: string; children: ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const moonstone = isMoonstoneRoute(pathname);
+
+  // Onboarding is its own full-screen experience — render it without chrome.
+  if (pathname.startsWith("/welcome")) return <>{children}</>;
+
+  return (
+    <div
+      className={cn(
+        "relative flex min-h-[100dvh]",
+        moonstone ? "moonstone bg-[var(--background)]" : "bg-background",
+      )}
+    >
+      {moonstone ? (
+        <MoonstoneAtmosphere variant={moonstoneVariant(pathname)} />
+      ) : (
+        <div className="app-ambient" aria-hidden />
+      )}
+      <DesktopSidebar userId={userId} />
+      <TabletRail userId={userId} />
+
+      {children}
+
+      <MobileNav onQuickAdd={() => setQuickAddOpen(true)} />
+      <QuickAddSheet
+        open={quickAddOpen}
+        onOpenChange={setQuickAddOpen}
+        onAnswerQuestion={() => navigate({ to: "/today", search: { compose: true } })}
+      />
+    </div>
+  );
+}
+
+/**
+ * Per-route content column. Lives inside the persistent <AppShell/>, so it
+ * carries only what is route-specific: the (optional) header, the scroll
+ * container, and the entrance transition.
+ */
 export function AppFrame({
   userId,
   children,
@@ -298,7 +350,6 @@ export function AppFrame({
   header,
   mobileTrailing,
   contentClassName,
-  onQuickAddQuestion,
 }: {
   userId: string;
   children: ReactNode;
@@ -307,42 +358,25 @@ export function AppFrame({
   header?: ReactNode;
   mobileTrailing?: ReactNode;
   contentClassName?: string;
-  /** Called when user picks "Answer today's question" from quick-add */
-  onQuickAddQuestion?: () => void;
 }) {
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
-
   return (
-    <div className={cn("relative flex bg-background", fullBleed ? "h-[100dvh] overflow-hidden" : "min-h-[100dvh]")}>
-      {!fullBleed && <div className="app-ambient" aria-hidden />}
-      <DesktopSidebar userId={userId} />
-      <TabletRail userId={userId} />
-
-      <div className={cn("relative z-10 flex min-w-0 flex-1 flex-col", fullBleed && "h-[100dvh]")}>
-        {header ?? <MobileTopBar userId={userId} trailing={mobileTrailing} />}
-        <main
-          className={cn(
-            fullBleed
-              ? "flex min-h-0 flex-1 flex-col overflow-hidden"
-              : cn(
-                  "mx-auto w-full flex-1 px-4 pb-28 pt-5 sm:px-6 md:pb-8 md:pt-8 lg:px-8",
-                  maxWidth === "full" && "max-w-none",
-                  maxWidth === "wide" && "max-w-7xl",
-                  maxWidth === "reading" && "max-w-3xl",
-                  contentClassName,
-                ),
-          )}
-        >
-          {children}
-        </main>
-      </div>
-
-      <MobileNav onQuickAdd={() => setQuickAddOpen(true)} />
-      <QuickAddSheet
-        open={quickAddOpen}
-        onOpenChange={setQuickAddOpen}
-        onAnswerQuestion={onQuickAddQuestion}
-      />
+    <div className={cn("relative z-10 flex min-w-0 flex-1 flex-col", fullBleed && "h-[100dvh]")}>
+      {header ?? <MobileTopBar userId={userId} trailing={mobileTrailing} />}
+      <main
+        className={cn(
+          fullBleed
+            ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+            : cn(
+                "mx-auto w-full flex-1 px-4 pb-28 pt-5 sm:px-6 md:pb-8 md:pt-8 lg:px-8",
+                maxWidth === "full" && "max-w-none",
+                maxWidth === "wide" && "max-w-7xl",
+                maxWidth === "reading" && "max-w-3xl",
+                contentClassName,
+              ),
+        )}
+      >
+        {children}
+      </main>
     </div>
   );
 }
