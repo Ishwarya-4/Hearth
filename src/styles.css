@@ -170,14 +170,14 @@
 
 @layer base {
   * {
-    border-color: var(--color-border);
+    border-color: var(--border);
   }
   html {
     font-family: var(--font-sans);
   }
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: var(--background);
+    color: var(--foreground);
     font-size: 0.9375rem;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
@@ -235,25 +235,25 @@
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--color-muted-foreground);
+    color: var(--muted-foreground);
   }
   .text-caption {
     font-size: 0.8125rem;
     line-height: 1.45;
-    color: var(--color-muted-foreground);
+    color: var(--muted-foreground);
   }
 
   /* Legacy alias */
   .text-whisper {
     font-size: 0.8125rem;
-    color: var(--color-muted-foreground);
+    color: var(--muted-foreground);
   }
 
   /* Surfaces */
   .hearth-panel {
     border-radius: var(--radius-xl);
-    background-color: var(--color-card);
-    border: 1px solid var(--color-border);
+    background-color: var(--card);
+    border: 1px solid var(--border);
     box-shadow:
       0 1px 2px oklch(0.2 0.02 285 / 0.04),
       0 6px 20px -10px oklch(0.2 0.02 285 / 0.1),
@@ -267,8 +267,8 @@
   }
   .hearth-panel-raised {
     border-radius: var(--radius-xl);
-    background-color: var(--color-surface-raised);
-    border: 1px solid var(--color-border);
+    background-color: var(--surface-raised);
+    border: 1px solid var(--border);
     box-shadow:
       0 1px 2px oklch(0.2 0.02 285 / 0.05),
       0 12px 32px -14px oklch(0.2 0.02 285 / 0.16),
@@ -305,7 +305,7 @@
   .skeleton {
     position: relative;
     overflow: hidden;
-    background-color: var(--color-muted);
+    background-color: var(--muted);
     border-radius: var(--radius-md);
   }
   .skeleton::after {
@@ -328,8 +328,8 @@
   /* Legacy aliases */
   .surface-card {
     border-radius: var(--radius-lg);
-    background-color: var(--color-card);
-    border: 1px solid var(--color-border);
+    background-color: var(--card);
+    border: 1px solid var(--border);
   }
   .surface-card-hover {
     transition:
@@ -342,8 +342,8 @@
   }
   .surface-paper {
     border-radius: var(--radius-lg);
-    background-color: var(--color-card);
-    border: 1px solid var(--color-border);
+    background-color: var(--card);
+    border: 1px solid var(--border);
   }
 
   .shadow-warm {
@@ -357,11 +357,11 @@
   }
 
   .frost-seal {
-    background: var(--color-muted);
-    border: 1px solid var(--color-border);
+    background: var(--muted);
+    border: 1px solid var(--border);
   }
   .dark .frost-seal {
-    background: var(--color-accent);
+    background: var(--accent);
   }
 
   /* Brand gradient — used sparingly */
@@ -377,9 +377,9 @@
   .bg-gradient-void {
     background: linear-gradient(
       180deg,
-      var(--color-background) 0%,
+      var(--background) 0%,
       oklch(0.96 0.004 285) 50%,
-      var(--color-background) 100%
+      var(--background) 100%
     );
   }
   .dark .bg-gradient-void {
@@ -629,6 +629,50 @@
    HEARTH — Public Landing Layer "Aurora"
    Bright, dimensional periwinkle language for the marketing + auth surfaces.
    ============================================================================= */
+
+/* The public surfaces (/, /auth) are a deliberately LIGHT stage — the dark
+   treatment was rejected. But the theme bootstrap puts `.dark` on <html> for
+   anyone whose OS prefers dark, which used to leave dark-theme tokens driving
+   this light canvas: near-white `--foreground` text on a near-white background.
+   So the layer pins its own palette, exactly like `.moonstone` does, and stops
+   inheriting the theme entirely. Declared unlayered and on the container itself
+   so it always beats `.dark` on the ancestor <html>. */
+.cinema-void {
+  --void: oklch(0.12 0.008 285);
+  --ember: oklch(0.72 0.16 55);
+  --ember-muted: oklch(0.72 0.16 55 / 0.15);
+
+  --background: oklch(0.98 0.003 285);
+  --foreground: oklch(0.2 0.012 285);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.012 285);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.012 285);
+
+  --primary: oklch(0.21 0.014 285);
+  --primary-deep: oklch(0.16 0.014 285);
+  --primary-foreground: oklch(0.99 0.002 285);
+
+  --hearth: oklch(0.56 0.19 280);
+  --hearth-muted: oklch(0.56 0.19 280 / 0.12);
+
+  --secondary: oklch(0.965 0.004 285);
+  --secondary-foreground: oklch(0.32 0.012 285);
+  --muted: oklch(0.96 0.004 285);
+  --muted-foreground: oklch(0.52 0.012 285);
+  --accent: oklch(0.96 0.006 285);
+  --accent-foreground: oklch(0.28 0.012 285);
+
+  --destructive: oklch(0.55 0.18 25);
+  --destructive-foreground: oklch(0.99 0.002 285);
+
+  --border: oklch(0.9 0.005 285 / 0.8);
+  --input: oklch(0.95 0.004 285);
+  --ring: oklch(0.56 0.19 280);
+
+  --surface-raised: oklch(1 0 0);
+}
+
 @layer utilities {
   /* ── Oversized editorial hero type ──────────────────────────────────────── */
   .text-hero {
@@ -665,7 +709,7 @@
     color: transparent;
   }
   .text-gradient-ink {
-    background: linear-gradient(100deg, var(--color-foreground) 0%, oklch(0.56 0.19 280) 100%);
+    background: linear-gradient(100deg, var(--foreground) 0%, oklch(0.56 0.19 280) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -684,7 +728,7 @@
         oklch(0.965 0.008 285) 52%,
         oklch(0.988 0.004 285) 100%
       );
-    color: var(--color-foreground);
+    color: var(--foreground);
   }
   .aurora {
     position: absolute;
@@ -790,7 +834,7 @@
   .btn-ghost-glass {
     background: oklch(1 0 0 / 0.58);
     border: 1px solid oklch(0.72 0.04 285 / 0.32);
-    color: var(--color-foreground);
+    color: var(--foreground);
     transition:
       background 0.25s ease,
       border-color 0.25s ease;
@@ -812,14 +856,14 @@
       box-shadow 0.2s ease;
   }
   .auth-tab {
-    color: var(--color-muted-foreground);
+    color: var(--muted-foreground);
   }
   .auth-tab:hover {
-    color: var(--color-foreground);
+    color: var(--foreground);
   }
   .auth-tab-active {
     background: oklch(1 0 0 / 0.92);
-    color: var(--color-foreground);
+    color: var(--foreground);
     box-shadow:
       0 1px 0 oklch(1 0 0 / 0.8) inset,
       0 8px 18px -14px oklch(0.28 0.04 285 / 0.42);

@@ -28,7 +28,7 @@ export const DESTINATIONS: Destination[] = [
   { to: "/today", label: "Today", icon: Home, description: "Your dashboard" },
   { to: "/calendar", label: "Calendar", icon: CalendarDays, description: "Plan together" },
   { to: "/memories", label: "Memories", icon: Heart, description: "What you've kept" },
-  { to: "/together", label: "Together", icon: Users, description: "Lists & goals" },
+  { to: "/together", label: "Together", icon: Users, description: "Shared lists" },
 ];
 
 export function useTheme() {
@@ -332,6 +332,7 @@ export function AppShell({ userId, children }: { userId: string; children: React
         open={quickAddOpen}
         onOpenChange={setQuickAddOpen}
         onAnswerQuestion={() => navigate({ to: "/today", search: { compose: true } })}
+        onLoveNote={() => navigate({ to: "/today", search: { note: true } })}
       />
     </div>
   );

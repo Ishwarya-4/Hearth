@@ -84,6 +84,7 @@ export type Database = {
           end_at: string;
           id: string;
           location: string | null;
+          milestone: string | null;
           reminder_minutes: number | null;
           recurrence: string;
           recurrence_until: string | null;
@@ -102,6 +103,7 @@ export type Database = {
           end_at: string;
           id?: string;
           location?: string | null;
+          milestone?: string | null;
           reminder_minutes?: number | null;
           recurrence?: string;
           recurrence_until?: string | null;
@@ -120,6 +122,7 @@ export type Database = {
           end_at?: string;
           id?: string;
           location?: string | null;
+          milestone?: string | null;
           reminder_minutes?: number | null;
           recurrence?: string;
           recurrence_until?: string | null;

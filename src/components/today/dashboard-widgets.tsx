@@ -2,6 +2,7 @@ import { animate, motion, useReducedMotion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, CalendarHeart, ChevronRight, Sparkles, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { countdownLabel, type UpcomingMilestone } from "@/lib/milestones";
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 
 // Pointer-tracking glow: feeds the `.spotlight-card::before` radial via CSS vars.
@@ -439,6 +440,106 @@ export function QuietDayCard({ onCheckIn }: { onCheckIn: () => void }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Milestones: the love story's fixed points, counting down ────────────────
+export function MilestonesPanel({ items }: { items: UpcomingMilestone[] }) {
+  const reduced = useReducedMotion();
+
+  if (items.length === 0) {
+    return (
+      <div className="mt-4">
+        <p className="text-caption leading-relaxed">
+          The dates your story is built on — your anniversary, their birthday, the day you met.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <MilestoneChip label="Anniversary" kind="anniversary" title="Our anniversary" />
+          <MilestoneChip label="Birthday" kind="birthday" title="Their birthday" />
+          <MilestoneChip label="A first" kind="first" title="Our first date" />
+        </div>
+      </div>
+    );
+  }
+
+  const [next, ...rest] = items;
+  const NextIcon = next.meta.icon;
+
+  return (
+    <div className="mt-4">
+      {/* The next one, given room to breathe */}
+      <Link
+        to="/calendar"
+        className="group block rounded-xl border border-hearth/15 bg-hearth-muted/25 p-3.5 transition-colors hover:bg-hearth-muted/40"
+      >
+        <div className="flex items-center gap-2">
+          <motion.span
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+            style={{ backgroundColor: `${next.meta.color}22`, color: next.meta.color }}
+            animate={reduced || next.days > 7 ? {} : { scale: [1, 1.08, 1] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <NextIcon className="h-3.5 w-3.5" />
+          </motion.span>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium">{next.title}</span>
+        </div>
+
+        <p className="mt-2.5 font-display text-2xl font-semibold leading-none tracking-tight text-foreground">
+          {countdownLabel(next.days)}
+        </p>
+        <p className="mt-1.5 text-caption">
+          {next.years > 0 ? (
+            <>
+              <span className="font-medium text-hearth">{next.meta.years(next.years)}</span>
+              {" · "}
+            </>
+          ) : null}
+          {next.date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
+        </p>
+      </Link>
+
+      {rest.length > 0 && (
+        <ul className="mt-2.5 space-y-0.5">
+          {rest.map((m) => {
+            const Icon = m.meta.icon;
+            return (
+              <li key={m.id}>
+                <Link
+                  to="/calendar"
+                  className="flex items-center gap-2.5 rounded-lg px-2 py-2 -mx-2 transition-colors hover:bg-accent/60"
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: m.meta.color }} />
+                  <span className="min-w-0 flex-1 truncate text-sm">{m.title}</span>
+                  <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                    {m.days === 0 ? "today" : `${m.days}d`}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function MilestoneChip({
+  label,
+  kind,
+  title,
+}: {
+  label: string;
+  kind: string;
+  title: string;
+}) {
+  return (
+    <Link
+      to="/calendar"
+      search={{ new: "milestone", milestone: kind, title }}
+      className="inline-flex items-center rounded-full border border-hearth/30 bg-hearth-muted px-3 py-1.5 text-xs font-medium text-hearth transition-all duration-200 hover:bg-hearth/15 hover:scale-[1.04] active:scale-[0.97]"
+    >
+      + {label}
+    </Link>
   );
 }
 

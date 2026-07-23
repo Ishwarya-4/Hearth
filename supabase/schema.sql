@@ -86,10 +86,15 @@ CREATE TABLE public.events (
   recurrence TEXT NOT NULL DEFAULT 'none' CHECK (recurrence IN ('none','daily','weekly','monthly','yearly')),
   recurrence_until TIMESTAMPTZ,
   recurrence_exdates TIMESTAMPTZ[] NOT NULL DEFAULT '{}',
+  -- Milestones (anniversaries, birthdays, "firsts"): an all-day yearly event
+  -- whose start_at is the ORIGINAL date, so (occurrence year - start year) is
+  -- the number of years. NULL = an ordinary event.
+  milestone TEXT CHECK (milestone IS NULL OR milestone IN ('anniversary','birthday','first','other')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX events_calendar_start_idx ON public.events(calendar_id, start_at);
+CREATE INDEX events_milestone_idx ON public.events(calendar_id, milestone) WHERE milestone IS NOT NULL;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.events TO authenticated;
 GRANT ALL ON public.events TO service_role;
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;

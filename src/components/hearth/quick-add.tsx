@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { CalendarPlus, MessageCircle, PenLine } from "lucide-react";
+import { CalendarPlus, Heart, MessageCircle, PenLine } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -12,9 +12,17 @@ type QuickAddProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAnswerQuestion?: () => void;
+  onLoveNote?: () => void;
 };
 
 const ACTIONS = [
+  {
+    key: "note",
+    label: "Leave a love note",
+    description: "A little message that lands on their Today",
+    icon: Heart,
+    event: "note" as const,
+  },
   {
     key: "event",
     label: "New event",
@@ -27,7 +35,7 @@ const ACTIONS = [
     label: "Answer today's question",
     description: "Share a reflection with your people",
     icon: PenLine,
-    action: "question" as const,
+    event: "question" as const,
   },
   {
     key: "memories",
@@ -38,7 +46,7 @@ const ACTIONS = [
   },
 ];
 
-export function QuickAddSheet({ open, onOpenChange, onAnswerQuestion }: QuickAddProps) {
+export function QuickAddSheet({ open, onOpenChange, onAnswerQuestion, onLoveNote }: QuickAddProps) {
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="rounded-t-2xl pb-[env(safe-area-inset-bottom)]">
@@ -48,9 +56,15 @@ export function QuickAddSheet({ open, onOpenChange, onAnswerQuestion }: QuickAdd
         </DrawerHeader>
         <div className="grid gap-2 px-4 pb-6">
           {ACTIONS.map(({ key, label, description, icon: Icon, ...rest }) => {
+            const isNote = "event" in rest && rest.event === "note";
             const inner = (
               <>
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground">
+                <span
+                  className={
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl " +
+                    (isNote ? "bg-hearth-muted text-hearth" : "bg-secondary text-foreground")
+                  }
+                >
                   <Icon className="h-5 w-5" strokeWidth={1.75} />
                 </span>
                 <span className="min-w-0 text-left">
@@ -64,12 +78,7 @@ export function QuickAddSheet({ open, onOpenChange, onAnswerQuestion }: QuickAdd
 
             if ("to" in rest && rest.to) {
               return (
-                <Link
-                  key={key}
-                  to={rest.to}
-                  className={cls}
-                  onClick={() => onOpenChange(false)}
-                >
+                <Link key={key} to={rest.to} className={cls} onClick={() => onOpenChange(false)}>
                   {inner}
                 </Link>
               );
@@ -81,7 +90,8 @@ export function QuickAddSheet({ open, onOpenChange, onAnswerQuestion }: QuickAdd
                 className={cls}
                 onClick={() => {
                   onOpenChange(false);
-                  onAnswerQuestion?.();
+                  if ("event" in rest && rest.event === "note") onLoveNote?.();
+                  else onAnswerQuestion?.();
                 }}
               >
                 {inner}

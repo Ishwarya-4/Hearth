@@ -1,5 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
+import { Heart } from "lucide-react";
 import { UserAvatar, type ProfileLike } from "@/components/calendar/user-avatar";
+import { isLoveNote } from "@/components/amber/love-note";
 import { moodMeta } from "@/lib/prompts";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
@@ -30,6 +32,7 @@ export function MemoryCard({
   const hasPhoto = !!m.photo_url;
   const isTextOnly = !hasPhoto;
   const interactive = !!onSelect;
+  const loveNote = isLoveNote(m);
   const preview = m.body || m.prompt_text;
 
   const card = (
@@ -82,11 +85,23 @@ export function MemoryCard({
           <span className="min-w-0 truncate text-[11px] font-medium text-muted-foreground">
             {who?.full_name?.split(" ")[0] ?? "Someone"}
           </span>
+          {loveNote && (
+            <span
+              className="inline-flex shrink-0 items-center text-hearth"
+              title="Love note"
+              aria-label="Love note"
+            >
+              <Heart className="h-3 w-3 fill-current" />
+            </span>
+          )}
           {showYear && (
             <span className="shrink-0 text-[11px] text-muted-foreground/70">· {year}</span>
           )}
           {mood && (
-            <span className="memory-mood-pill ml-auto shrink-0 px-1.5 py-0.5 text-[11px]" title={mood.label}>
+            <span
+              className="memory-mood-pill ml-auto shrink-0 px-1.5 py-0.5 text-[11px]"
+              title={mood.label}
+            >
               {mood.emoji}
             </span>
           )}
