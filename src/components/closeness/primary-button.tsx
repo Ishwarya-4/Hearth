@@ -15,7 +15,7 @@ const shimmerVariants = {
   },
 };
 
-export function EmberButton({
+export function PrimaryButton({
   className,
   children,
   loading,

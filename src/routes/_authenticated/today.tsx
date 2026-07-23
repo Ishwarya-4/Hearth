@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppFrame } from "@/components/app-frame";
 import { Overline, EmptyState, Skeleton } from "@/components/hearth";
 import {
-  EmberButton,
+  PrimaryButton,
   GhostButton,
   LoveNoteComposer,
   LoveNotesPanel,
@@ -15,7 +15,7 @@ import {
   RitualSheet,
   Seal,
   YourMoment,
-} from "@/components/amber";
+} from "@/components/closeness";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/calendar/user-avatar";
@@ -649,7 +649,7 @@ function InviteStrip({ spaceId }: { spaceId: string }) {
         />
       </div>
       <div className="flex gap-2">
-        <EmberButton size="sm" onClick={send} loading={busy} disabled={!email.trim()}>Send</EmberButton>
+        <PrimaryButton size="sm" onClick={send} loading={busy} disabled={!email.trim()}>Send</PrimaryButton>
         <GhostButton onClick={() => setOpen(false)}>Not now</GhostButton>
       </div>
     </div>

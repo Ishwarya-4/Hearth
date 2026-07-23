@@ -1,7 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Heart } from "lucide-react";
 import { UserAvatar, type ProfileLike } from "@/components/calendar/user-avatar";
-import { isLoveNote } from "@/components/amber/love-note";
+import { isLoveNote } from "@/components/closeness/love-note";
 import { moodMeta } from "@/lib/prompts";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";

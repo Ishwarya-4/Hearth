@@ -434,17 +434,18 @@
       0 0 0 1px oklch(1 0 0 / 0.04) inset;
   }
 
-  /* Ember CTA button */
+  /* Hearth-led CTA: violet carries the action, ember is only the warm tail.
+     Token-driven so it re-skins under .dark and .moonstone (see docs/BRAND.md). */
   .btn-ember {
     background: linear-gradient(
       135deg,
-      oklch(0.56 0.19 280) 0%,
-      oklch(0.62 0.17 270) 50%,
-      oklch(0.72 0.16 55) 100%
+      var(--hearth) 0%,
+      color-mix(in oklch, var(--hearth) 78%, var(--ember)) 55%,
+      var(--ember) 100%
     );
     color: oklch(0.99 0.002 285);
     box-shadow:
-      0 2px 8px oklch(0.56 0.19 280 / 0.35),
+      0 2px 8px color-mix(in oklch, var(--hearth) 35%, transparent),
       0 0 0 1px oklch(1 0 0 / 0.1) inset;
     transition:
       box-shadow 0.25s ease,
@@ -452,7 +453,7 @@
   }
   .btn-ember:hover {
     box-shadow:
-      0 4px 20px oklch(0.56 0.19 280 / 0.45),
+      0 4px 20px color-mix(in oklch, var(--hearth) 45%, transparent),
       0 0 0 1px oklch(1 0 0 / 0.15) inset;
   }
 
@@ -962,7 +963,7 @@
    pale-lavender dawn — cooler and more dimensional than the plain white app
    default — with periwinkle carried only as the accent. `.moonstone`
    re-declares the design tokens (exactly like `.dark`) so every token-driven
-   child — amber, hearth, shadcn — re-skins automatically.
+   child — closeness, hearth, shadcn — re-skins automatically.
    ============================================================================= */
 .moonstone {
   --void: oklch(0.2 0.02 285);

@@ -1,4 +1,4 @@
-export { EmberButton, GhostButton } from "./ember-button";
+export { PrimaryButton, GhostButton } from "./primary-button";
 export {
   LoveNoteComposer,
   LoveNotesPanel,

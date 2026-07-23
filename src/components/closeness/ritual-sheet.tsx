@@ -7,7 +7,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Textarea } from "@/components/ui/textarea";
-import { EmberButton } from "./ember-button";
+import { PrimaryButton } from "./primary-button";
 import { MoodOrbit } from "./mood-orbit";
 import { Whisper } from "./typography";
 
@@ -96,9 +96,9 @@ export function RitualSheet({
 
           <motion.div variants={sheetItem}>
             <div className="mt-5 flex justify-center">
-              <EmberButton size="lg" loading={saving} onClick={onSave} className="w-full max-w-xs">
+              <PrimaryButton size="lg" loading={saving} onClick={onSave} className="w-full max-w-xs">
                 Keep it
-              </EmberButton>
+              </PrimaryButton>
             </div>
           </motion.div>
         </motion.div>

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar, type ProfileLike } from "@/components/calendar/user-avatar";
 import { MOODS, moodMeta } from "@/lib/prompts";
 import { cn } from "@/lib/utils";
-import { EmberButton } from "./ember-button";
+import { PrimaryButton } from "./primary-button";
 import type { Database } from "@/integrations/supabase/types";
 
 type Moment = Database["public"]["Tables"]["moments"]["Row"];
@@ -130,7 +130,7 @@ export function LoveNoteComposer({
           </div>
 
           <div className="mt-5 flex items-center gap-3">
-            <EmberButton
+            <PrimaryButton
               size="lg"
               loading={sending}
               disabled={!body.trim()}
@@ -138,7 +138,7 @@ export function LoveNoteComposer({
               className="flex-1"
             >
               <Send className="mr-1.5 h-4 w-4" /> Send it
-            </EmberButton>
+            </PrimaryButton>
             <span
               className={cn(
                 "w-10 shrink-0 text-right text-xs tabular-nums",

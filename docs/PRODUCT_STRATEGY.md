@@ -7,6 +7,9 @@
 > Companion to `docs/PRODUCT_REDESIGN.md` (the UX/IA redesign). Where the redesign proposed
 > an expansive, calendar-led feature set, **this document re-centers on the relationship and
 > draws the hard boundary.**
+>
+> Companion to `docs/BRAND.md` (the design layer): this document decides *what* we build and
+> for whom; BRAND.md decides what it looks and sounds like — color registers, type, voice.
 
 _Status: definitive · Owner: Product · Audience: anyone deciding what to build next_
 
