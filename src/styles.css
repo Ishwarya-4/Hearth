@@ -1012,6 +1012,58 @@
   color: var(--foreground);
 }
 
+/* ── Evening Moonstone — the same stage after dark ─────────────────────────────
+   All four authenticated destinations are wrapped in `.moonstone`, and that
+   class re-declares the full token set. Unqualified, it pinned the Morning
+   palette over everything and the Morning/Evening toggle had no visible effect
+   anywhere in the app. `.dark .moonstone` (0,2,0) outranks `.moonstone` (0,1,0),
+   so the stage now has both times of day. Keep the two blocks in sync: every
+   token declared above must be re-declared here. */
+.dark .moonstone {
+  --void: oklch(0.08 0.01 285);
+  --ember: oklch(0.78 0.14 58);
+  --ember-muted: oklch(0.78 0.14 58 / 0.18);
+
+  --background: oklch(0.17 0.022 284);
+  --foreground: oklch(0.95 0.006 285);
+  --card: oklch(0.23 0.02 285);
+  --card-foreground: oklch(0.95 0.006 285);
+  --popover: oklch(0.23 0.02 285);
+  --popover-foreground: oklch(0.95 0.006 285);
+
+  --primary: oklch(0.95 0.006 285);
+  --primary-deep: oklch(0.88 0.006 285);
+  --primary-foreground: oklch(0.19 0.02 285);
+
+  --hearth: oklch(0.74 0.155 284);
+  --hearth-muted: oklch(0.74 0.155 284 / 0.18);
+
+  --secondary: oklch(0.27 0.02 285);
+  --secondary-foreground: oklch(0.95 0.006 285);
+  --muted: oklch(0.25 0.02 285);
+  --muted-foreground: oklch(0.7 0.016 285);
+  --accent: oklch(0.29 0.024 285);
+  --accent-foreground: oklch(0.96 0.006 285);
+
+  --destructive: oklch(0.62 0.19 25);
+  --destructive-foreground: oklch(0.99 0.002 285);
+
+  --border: oklch(0.85 0.03 285 / 0.14);
+  --input: oklch(0.85 0.03 285 / 0.16);
+  --ring: oklch(0.74 0.155 284);
+
+  --surface-raised: oklch(0.25 0.022 285);
+
+  --sidebar: oklch(0.2 0.022 284);
+  --sidebar-foreground: oklch(0.95 0.006 285);
+  --sidebar-primary: oklch(0.74 0.155 284);
+  --sidebar-primary-foreground: oklch(0.19 0.02 285);
+  --sidebar-accent: oklch(0.27 0.024 285);
+  --sidebar-accent-foreground: oklch(0.96 0.006 285);
+  --sidebar-border: oklch(0.85 0.03 285 / 0.1);
+  --sidebar-ring: oklch(0.74 0.155 284);
+}
+
 @layer utilities {
   /* ── The dawn sky: pale lavender with soft periwinkle/blue blooms ───────── */
   .moonstone-sky {
@@ -1034,6 +1086,46 @@
       oklch(0.93 0.06 70 / 0.55) 0%,
       transparent 64%
     );
+  }
+
+  /* Top fade so the sticky mobile chrome blends into the sky */
+  .moonstone-topfade {
+    background: linear-gradient(180deg, oklch(0.95 0.02 284) 0%, transparent 100%);
+  }
+
+  /* ── Evening sky: the same lavender stage, lights down ──────────────────── */
+  .dark .moonstone-sky {
+    background:
+      radial-gradient(120% 80% at 82% -12%, oklch(0.3 0.05 288) 0%, transparent 56%),
+      radial-gradient(95% 70% at 0% 22%, oklch(0.26 0.05 250 / 0.7) 0%, transparent 60%),
+      radial-gradient(85% 62% at 62% 112%, oklch(0.28 0.06 305 / 0.5) 0%, transparent 56%),
+      linear-gradient(
+        180deg,
+        oklch(0.195 0.026 284) 0%,
+        oklch(0.145 0.022 281) 58%,
+        oklch(0.175 0.026 288) 100%
+      );
+  }
+
+  /* Embers on the horizon rather than dawn light */
+  .dark .moonstone-dawn {
+    background: radial-gradient(
+      72% 55% at 50% 110%,
+      oklch(0.46 0.09 60 / 0.34) 0%,
+      transparent 64%
+    );
+  }
+
+  .dark .moonstone-topfade {
+    background: linear-gradient(180deg, oklch(0.19 0.026 284) 0%, transparent 100%);
+  }
+
+  /* Grain multiplies to nothing on a dark canvas — screen it instead. Scoped to
+     the stage: `.cinema-void` (landing/auth) stays a light canvas even under
+     `.dark`, so it must keep the multiply blend. */
+  .dark .moonstone .grain::after {
+    mix-blend-mode: screen;
+    opacity: 0.035;
   }
 
   /* ── Moonstone glass: crisp frosted-white panels with a defined hairline ── */
@@ -1077,6 +1169,27 @@
     -webkit-backdrop-filter: blur(26px) saturate(1.3);
   }
 
+  /* ── Evening surfaces: smoked glass instead of frosted white ────────────── */
+  .dark .moonstone .hearth-glass,
+  .dark .moonstone .hearth-panel,
+  .dark .moonstone .hearth-panel-raised {
+    background: oklch(0.27 0.022 285 / 0.58);
+    border: 1px solid oklch(0.85 0.03 285 / 0.1);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.06) inset,
+      0 2px 10px oklch(0 0 0 / 0.32),
+      0 30px 64px -44px oklch(0 0 0 / 0.65);
+  }
+
+  .dark .moonstone .spotlight-card:hover {
+    border-color: oklch(0.74 0.155 284 / 0.38);
+  }
+
+  .dark .moonstone .moonstone-chrome {
+    background: oklch(0.2 0.024 284 / 0.72);
+    border-color: oklch(0.85 0.03 285 / 0.08);
+  }
+
   /* Per-route atmosphere tints — same world, different rooms */
   [data-moonstone="calendar"] .moonstone-bloom-left {
     background-color: oklch(0.68 0.12 250 / 0.24);
@@ -1101,6 +1214,39 @@
   }
   [data-moonstone="together"] .moonstone-bloom-right {
     background-color: oklch(0.76 0.1 295 / 0.18);
+  }
+
+  /* Evening tints — same hues, dimmed so the blooms read as glow, not haze */
+  .dark [data-moonstone="today"] .moonstone-bloom-left {
+    background-color: oklch(0.54 0.15 286 / 0.3);
+  }
+  .dark [data-moonstone="today"] .moonstone-bloom-right {
+    background-color: oklch(0.5 0.11 250 / 0.26);
+  }
+
+  .dark [data-moonstone="calendar"] .moonstone-bloom-left {
+    background-color: oklch(0.5 0.13 250 / 0.3);
+  }
+  .dark [data-moonstone="calendar"] .moonstone-bloom-right {
+    background-color: oklch(0.52 0.11 265 / 0.26);
+  }
+
+  .dark [data-moonstone="memories"] .moonstone-bloom-right {
+    background-color: oklch(0.56 0.13 55 / 0.24);
+  }
+  .dark [data-moonstone="memories"] .moonstone-dawn {
+    background: radial-gradient(
+      72% 55% at 50% 110%,
+      oklch(0.5 0.1 65 / 0.4) 0%,
+      transparent 64%
+    );
+  }
+
+  .dark [data-moonstone="together"] .moonstone-bloom-left {
+    background-color: oklch(0.54 0.14 286 / 0.28);
+  }
+  .dark [data-moonstone="together"] .moonstone-bloom-right {
+    background-color: oklch(0.56 0.11 295 / 0.24);
   }
 }
 
@@ -1291,5 +1437,125 @@
     border: 1px solid oklch(0.52 0.04 285 / 0.12);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+  }
+}
+
+/* ── Memories archive, Evening ────────────────────────────────────────────────
+   The archive surfaces above are frosted *white* glass with hardcoded values, so
+   in Evening they'd render near-white panels carrying near-white token text.
+   Same materials, smoked: dark glass, lifted periwinkle accents. */
+@layer utilities {
+  .dark .memory-stat-pill,
+  .dark .memory-view-switcher,
+  .dark .memory-map-place-btn,
+  .dark .memory-map-loading {
+    background: oklch(0.27 0.022 285 / 0.55);
+    border-color: oklch(0.85 0.03 285 / 0.1);
+    box-shadow: 0 2px 12px oklch(0 0 0 / 0.3);
+  }
+
+  .dark .memory-filter-chip {
+    background: oklch(0.27 0.022 285 / 0.45);
+    border-color: oklch(0.85 0.03 285 / 0.09);
+  }
+  .dark .memory-filter-chip--active {
+    background: oklch(0.74 0.155 284 / 0.2);
+  }
+
+  .dark .memory-card {
+    background: oklch(0.26 0.022 285 / 0.6);
+    border-color: oklch(0.85 0.03 285 / 0.11);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.05) inset,
+      0 4px 16px oklch(0 0 0 / 0.3),
+      0 28px 60px -44px oklch(0 0 0 / 0.6);
+  }
+  .dark .memory-card:hover {
+    border-color: oklch(0.74 0.155 284 / 0.35);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.07) inset,
+      0 8px 24px oklch(0 0 0 / 0.38),
+      0 36px 72px -42px oklch(0.4 0.1 285 / 0.7);
+  }
+  .dark .memory-card--text {
+    background: linear-gradient(
+      145deg,
+      oklch(0.29 0.024 285 / 0.68) 0%,
+      oklch(0.24 0.022 288 / 0.6) 100%
+    );
+  }
+  .dark .memory-card--compact,
+  .dark .memory-card--compact:hover {
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.05) inset,
+      0 2px 8px oklch(0 0 0 / 0.28),
+      0 16px 40px -32px oklch(0 0 0 / 0.5);
+  }
+
+  .dark .memory-mood-pill {
+    background: oklch(0.74 0.155 284 / 0.18);
+  }
+
+  .dark .memory-modal-backdrop {
+    background: oklch(0.06 0.01 285 / 0.62);
+  }
+  .dark .memory-modal-panel {
+    background: oklch(0.22 0.022 285 / 0.96);
+    border-color: oklch(0.85 0.03 285 / 0.12);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.06) inset,
+      0 24px 80px -20px oklch(0 0 0 / 0.7),
+      0 8px 32px oklch(0 0 0 / 0.4);
+  }
+  .dark .memory-modal-photo {
+    border-bottom-color: oklch(0.85 0.03 285 / 0.08);
+  }
+
+  .dark .memory-year-marker {
+    background: linear-gradient(
+      180deg,
+      oklch(0.17 0.022 284 / 0.95) 0%,
+      oklch(0.17 0.022 284 / 0.7) 80%,
+      transparent 100%
+    );
+  }
+  .dark .memory-timeline-rail {
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      oklch(0.74 0.155 284 / 0.4) 8%,
+      oklch(0.78 0.14 58 / 0.32) 50%,
+      oklch(0.74 0.155 284 / 0.4) 92%,
+      transparent 100%
+    );
+  }
+  .dark .memory-timeline-node {
+    background: oklch(0.74 0.155 284);
+    box-shadow:
+      0 0 0 3px oklch(0.74 0.155 284 / 0.2),
+      0 0 12px oklch(0.74 0.155 284 / 0.5);
+  }
+
+  .dark .memory-compose-header {
+    background: oklch(0.22 0.022 285 / 0.75);
+  }
+  .dark .memory-compose-photo-drop {
+    border-color: oklch(0.85 0.03 285 / 0.18);
+    background: oklch(0.27 0.022 285 / 0.35);
+  }
+  .dark .memory-compose-photo-drop:hover {
+    border-color: oklch(0.74 0.155 284 / 0.4);
+    background: oklch(0.74 0.155 284 / 0.08);
+  }
+
+  .dark .memory-map-frame {
+    border-color: oklch(0.85 0.03 285 / 0.12);
+    box-shadow:
+      0 4px 24px oklch(0 0 0 / 0.3),
+      0 32px 64px -40px oklch(0 0 0 / 0.6);
+  }
+  .dark .memory-map-place-btn:hover {
+    border-color: oklch(0.74 0.155 284 / 0.3);
+    background: oklch(0.3 0.024 285 / 0.72);
   }
 }

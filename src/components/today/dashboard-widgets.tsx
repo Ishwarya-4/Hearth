@@ -134,7 +134,7 @@ export function MoonstoneAtmosphere({ variant = "today" }: { variant?: Moonstone
       <div className="grain absolute inset-0" />
 
       {/* Soft top fade so the sticky mobile chrome blends into the sky */}
-      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[oklch(0.95_0.02_284)] to-transparent" />
+      <div className="moonstone-topfade absolute inset-x-0 top-0 h-24" />
     </div>
   );
 }
