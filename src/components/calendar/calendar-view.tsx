@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addDays, eventsOnDay, fmtTime, isMilestoneEvent, isSameDay, startOfDay, startOfMonth, startOfWeek } from "@/lib/calendar-utils";
+import { milestoneMeta } from "@/lib/milestones";
 import { UserAvatar, AvatarStack, type ProfileLike } from "./user-avatar";
 import { cn } from "@/lib/utils";
 import { Repeat, Sparkles } from "lucide-react";
@@ -15,6 +16,7 @@ export type EventRow = {
   end_at: string;
   all_day: boolean;
   color: string | null;
+  milestone?: string | null;
   reminder_minutes?: number | null;
   recurrence?: string | null;
   recurrence_until?: string | null;
@@ -271,7 +273,7 @@ function EventChip({ ev, profile, color, onClick, compact, draggable, onDragStar
       className={cn("w-full flex items-center gap-1 rounded px-1.5 text-left text-[10.5px] hover:brightness-95", compact ? "py-0.5" : "py-1", draggable && "cursor-grab active:cursor-grabbing")}
       style={{ background: color + "22", borderLeft: `3px solid ${color}` }}
     >
-      {isMilestoneEvent(ev) ? <Sparkles className="h-2.5 w-2.5 shrink-0 text-hearth" /> : isRecurringEvent(ev) && <Repeat className="h-2.5 w-2.5 shrink-0 opacity-70" />}
+      <MilestoneMark ev={ev} />
       <span className="font-semibold truncate flex-1 text-foreground">{ev.title}</span>
       {going > 0 ? (
         <span className="shrink-0 rounded-full bg-hearth/15 px-1 text-[9px] font-semibold leading-tight text-hearth">{going}</span>
@@ -280,6 +282,22 @@ function EventChip({ ev, profile, color, onClick, compact, draggable, onDragStar
       )}
     </button>
   );
+}
+
+/**
+ * A milestone wears its own icon and colour (a heart for an anniversary, a cake
+ * for a birthday); everything else falls back to the repeat marker.
+ */
+function MilestoneMark({ ev }: { ev: EventRow }) {
+  const meta = milestoneMeta(ev.milestone);
+  if (meta) {
+    const Icon = meta.icon;
+    return <Icon className="h-2.5 w-2.5 shrink-0" style={{ color: meta.color }} />;
+  }
+  // Legacy: an all-day yearly event from before milestones were explicit.
+  if (isMilestoneEvent(ev)) return <Sparkles className="h-2.5 w-2.5 shrink-0 text-hearth" />;
+  if (isRecurringEvent(ev)) return <Repeat className="h-2.5 w-2.5 shrink-0 opacity-70" />;
+  return null;
 }
 
 function MonthView({ anchor, events, profilesById, calendarColorById, attendanceByEvent, onEventClick, onSlotClick, onEventMove }: Props) {

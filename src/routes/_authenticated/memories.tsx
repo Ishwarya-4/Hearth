@@ -155,7 +155,7 @@ function MemoriesPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          No memories match these filters.
+          Nothing here with these filters on — try widening them a little.
         </motion.p>
       )}
 

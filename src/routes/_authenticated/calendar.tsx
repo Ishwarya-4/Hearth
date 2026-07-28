@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { CalendarView, type EventRow } from "@/components/calendar/calendar-view";
 import { EventDialog, type EventDraft, type DeleteScope, type AttendanceStatus } from "@/components/calendar/event-dialog";
+import { milestoneMeta, type MilestoneKind } from "@/lib/milestones";
 import { MembersDialog } from "@/components/calendar/members-dialog";
 import { EventDetail } from "@/components/calendar/event-detail";
 import { UserAvatar, AvatarStack, type ProfileLike } from "@/components/calendar/user-avatar";
@@ -29,9 +30,12 @@ import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({ meta: [{ title: "Calendar — Hearth" }] }),
-  validateSearch: (search: Record<string, unknown>): { new?: string; title?: string } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { new?: string; title?: string; milestone?: string } => ({
     new: typeof search.new === "string" ? search.new : undefined,
     title: typeof search.title === "string" ? search.title : undefined,
+    milestone: typeof search.milestone === "string" ? search.milestone : undefined,
   }),
   component: AppPage,
 });
@@ -82,7 +86,7 @@ function AppPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { user } = Route.useRouteContext();
-  const { new: newIntent, title: seedTitle } = Route.useSearch();
+  const { new: newIntent, title: seedTitle, milestone: seedMilestone } = Route.useSearch();
   const [view, setView] = useState<ViewKind>("week");
   const [anchor, setAnchor] = useState<Date>(new Date());
   const [search, setSearch] = useState("");
@@ -290,12 +294,17 @@ function AppPage() {
   }
 
   // -------- handlers --------
-  function openNewEvent(at?: Date, opts?: { title?: string; allDay?: boolean }) {
+  function openNewEvent(
+    at?: Date,
+    opts?: { title?: string; allDay?: boolean; milestone?: MilestoneKind },
+  ) {
     if (calendars.length === 0) return toast.error("No calendar available");
+    const meta = milestoneMeta(opts?.milestone);
+    const allDay = opts?.allDay || !!meta;
     const start = at ? new Date(at) : new Date();
     if (!at) start.setMinutes(0, 0, 0);
     const end = new Date(start);
-    if (opts?.allDay) {
+    if (allDay) {
       end.setHours(23, 59, 59, 999);
     } else {
       end.setHours(end.getHours() + 1);
@@ -309,12 +318,13 @@ function AppPage() {
         location: "",
         start_at: start.toISOString(),
         end_at: end.toISOString(),
-        all_day: opts?.allDay ?? false,
-        color: null,
+        all_day: allDay,
+        color: meta?.color ?? null,
         reminder_minutes: null,
-        recurrence: "none",
+        recurrence: meta ? "yearly" : "none",
         recurrence_until: null,
         recurrence_exdates: [],
+        milestone: meta?.key ?? null,
       },
     });
   }
@@ -323,7 +333,12 @@ function AppPage() {
   useEffect(() => {
     if (!newIntent || calendars.length === 0) return;
     const now = new Date();
-    if (newIntent === "today") {
+    const kind = milestoneMeta(seedMilestone)?.key;
+    if (newIntent === "milestone") {
+      // A milestone's date is its *original* one, so we open on today and let
+      // them dial it back to the wedding / the birth / the first date.
+      openNewEvent(startOfDay(now), { title: seedTitle ?? "", milestone: kind ?? "anniversary" });
+    } else if (newIntent === "today") {
       const start = new Date(now);
       start.setHours(19, 0, 0, 0);
       openNewEvent(start, { title: seedTitle ?? "" });
@@ -334,7 +349,7 @@ function AppPage() {
     }
     navigate({ to: "/calendar", search: {}, replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newIntent, calendars.length]);
+  }, [newIntent, seedMilestone, calendars.length]);
 
   // For a recurring occurrence, the editable/deletable row is the underlying series (base).
   function toDraft(ev: EventRow): EventDraft {
@@ -353,6 +368,7 @@ function AppPage() {
       recurrence: (base.recurrence ?? "none") as EventDraft["recurrence"],
       recurrence_until: base.recurrence_until ?? null,
       recurrence_exdates: base.recurrence_exdates ?? [],
+      milestone: (base.milestone ?? null) as EventDraft["milestone"],
       occurrence_date: ev.occurrence_date ?? null,
     };
   }
@@ -383,6 +399,7 @@ function AppPage() {
           all_day: draft.all_day,
           color: draft.color,
           reminder_minutes: draft.reminder_minutes,
+          milestone: draft.milestone,
           ...recurrenceFields,
         }).eq("id", draft.id);
         if (error) throw error;
@@ -399,10 +416,11 @@ function AppPage() {
           all_day: draft.all_day,
           color: draft.color,
           reminder_minutes: draft.reminder_minutes,
+          milestone: draft.milestone,
           ...recurrenceFields,
         });
         if (error) throw error;
-        toast.success("Event created");
+        toast.success(draft.milestone ? "Milestone added" : "Event created");
       }
       setEventDialog(null);
       qc.invalidateQueries({ queryKey: ["events"] });

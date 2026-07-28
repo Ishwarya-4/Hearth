@@ -5,14 +5,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppFrame } from "@/components/app-frame";
 import { Overline, EmptyState, Skeleton } from "@/components/hearth";
 import {
-  EmberButton,
+  PrimaryButton,
   GhostButton,
+  LoveNoteComposer,
+  LoveNotesPanel,
+  LOVE_NOTE_PROMPT_KEY,
   MomentReveal,
   PromptHero,
   RitualSheet,
   Seal,
   YourMoment,
-} from "@/components/amber";
+} from "@/components/closeness";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/calendar/user-avatar";
@@ -24,11 +27,13 @@ import {
   EventRowVisual,
   FeaturedCountdown,
   LiveClock,
+  MilestonesPanel,
   QuietDayCard,
   SpotlightPanel,
   TodayEmptyActions,
   WeekStrip,
 } from "@/components/today/dashboard-widgets";
+import { countdownLabel, daysUntil, upcomingMilestones } from "@/lib/milestones";
 import { CalendarPlus, ChevronRight, Mail, Sparkles, Users } from "lucide-react";
 import { promptForDate, todayISODate } from "@/lib/prompts";
 import { errorMessage, invitePartner } from "@/lib/space";
@@ -43,8 +48,9 @@ type Moment = Database["public"]["Tables"]["moments"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/today")({
   head: () => ({ meta: [{ title: "Today — Hearth" }] }),
-  validateSearch: (search: Record<string, unknown>): { compose?: boolean } => ({
+  validateSearch: (search: Record<string, unknown>): { compose?: boolean; note?: boolean } => ({
     compose: search.compose === true || search.compose === "true",
+    note: search.note === true || search.note === "true",
   }),
   component: TodayPage,
 });
@@ -62,19 +68,9 @@ function greeting(d = new Date()) {
   return "Good evening";
 }
 
-function daysUntil(target: Date, now = new Date()) {
-  return Math.round((startOfDay(target).getTime() - startOfDay(now).getTime()) / 86_400_000);
-}
-
-function countdownLabel(n: number) {
-  if (n <= 0) return "Today";
-  if (n === 1) return "Tomorrow";
-  return `${n} days`;
-}
-
 function TodayPage() {
   const { user } = Route.useRouteContext();
-  const { compose } = Route.useSearch();
+  const { compose, note } = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const prompt = useMemo(() => promptForDate(), []);
@@ -86,6 +82,8 @@ function TodayPage() {
   const [mood, setMood] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [sendingNote, setSendingNote] = useState(false);
 
   // Quick-add "Answer today's question" deep-links here with ?compose=1.
   useEffect(() => {
@@ -94,6 +92,14 @@ function TodayPage() {
       navigate({ to: "/today", search: {}, replace: true });
     }
   }, [compose, navigate]);
+
+  // Quick-add "Leave a love note" deep-links here with ?note=1.
+  useEffect(() => {
+    if (note) {
+      setNoteOpen(true);
+      navigate({ to: "/today", search: {}, replace: true });
+    }
+  }, [note, navigate]);
 
   const eventsQ = useQuery({
     queryKey: ["space-events", space?.id],
@@ -128,6 +134,13 @@ function TodayPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [occurrences],
   );
+  // Milestones read from the BASE rows (not expanded occurrences) so each one
+  // still knows its original date — that's where "3 years together" comes from.
+  const milestones = useMemo(
+    () => upcomingMilestones(eventsQ.data ?? [], 3),
+    [eventsQ.data],
+  );
+
   const weekDays = useMemo(() => {
     const start = startOfWeek(now);
     return Array.from({ length: 7 }, (_, i) => {
@@ -174,6 +187,23 @@ function TodayPage() {
     queryFn: async () => {
       const { data } = await supabase.from("moments").select("*").eq("calendar_id", space!.id).eq("happened_on", lastYear).order("created_at");
       return (data ?? []) as Moment[];
+    },
+  });
+
+  const loveNotesQ = useQuery({
+    queryKey: ["love-notes", space?.id],
+    enabled: !!space,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("moments")
+        .select("*")
+        .eq("calendar_id", space!.id)
+        .eq("kind", "note")
+        .eq("prompt_key", LOVE_NOTE_PROMPT_KEY)
+        .order("created_at", { ascending: false })
+        .limit(12);
+      if (error) throw error;
+      return data as Moment[];
     },
   });
 
@@ -232,6 +262,29 @@ function TodayPage() {
     haptic("light");
     setSheetOpen(true);
   }
+
+  async function sendLoveNote(noteBody: string, noteMood: string | null) {
+    if (!space || !noteBody.trim()) return;
+    setSendingNote(true);
+    const { error } = await supabase.from("moments").insert({
+      calendar_id: space.id,
+      created_by: user.id,
+      kind: "note",
+      prompt_key: LOVE_NOTE_PROMPT_KEY,
+      body: noteBody.trim(),
+      mood: noteMood,
+      happened_on: today,
+    });
+    setSendingNote(false);
+    if (error) return toast.error(error.message);
+    haptic("success");
+    toast.success("Sent — it's on their Today now");
+    setNoteOpen(false);
+    qc.invalidateQueries({ queryKey: ["love-notes", space.id] });
+    qc.invalidateQueries({ queryKey: ["thread", space.id] });
+  }
+
+  const partnerName = others[0]?.full_name?.split(" ")[0] || "them";
 
   return (
     <AppFrame userId={user.id} maxWidth="wide">
@@ -414,6 +467,21 @@ function TodayPage() {
                   </SpotlightPanel>
                 </DashboardItem>
 
+                {others.length > 0 && (
+                  <DashboardItem>
+                    <SpotlightPanel className="relative overflow-hidden p-5 sm:p-6">
+                      <div className="pointer-events-none absolute -right-5 -top-5 h-24 w-24 rounded-full bg-hearth/10 blur-2xl" aria-hidden />
+                      <LoveNotesPanel
+                        notes={loveNotesQ.data ?? []}
+                        userId={user.id}
+                        partnerName={partnerName}
+                        profileById={profileById}
+                        onCompose={() => { haptic("light"); setNoteOpen(true); }}
+                      />
+                    </SpotlightPanel>
+                  </DashboardItem>
+                )}
+
                 {(lastYearQ.data?.length ?? 0) > 0 && (
                   <DashboardItem>
                     <SpotlightPanel className="relative overflow-hidden p-5 sm:p-6">
@@ -431,6 +499,14 @@ function TodayPage() {
 
               {/* Right rail */}
               <aside className="flex flex-col gap-5">
+                <DashboardItem>
+                  <SpotlightPanel className="relative overflow-hidden p-5">
+                    <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[oklch(0.72_0.13_10)]/12 blur-2xl" aria-hidden />
+                    <Overline>Milestones</Overline>
+                    <MilestonesPanel items={milestones} />
+                  </SpotlightPanel>
+                </DashboardItem>
+
                 <DashboardItem>
                   <SpotlightPanel className="p-5">
                     <Overline>This week</Overline>
@@ -466,7 +542,7 @@ function TodayPage() {
                     <nav className="mt-3 space-y-1">
                       <QuickLink to="/calendar" icon={<CalendarPlus className="h-4 w-4" />} label="Full calendar" />
                       <QuickLink to="/memories" icon={<Sparkles className="h-4 w-4" />} label="All memories" />
-                      <QuickLink to="/together" icon={<Users className="h-4 w-4" />} label="Lists & goals" />
+                      <QuickLink to="/together" icon={<Users className="h-4 w-4" />} label="Shared lists" />
                     </nav>
                   </SpotlightPanel>
                 </DashboardItem>
@@ -488,6 +564,16 @@ function TodayPage() {
           onBodyChange={setBody}
           onSave={saveMoment}
           saving={saving}
+        />
+      )}
+
+      {space && (
+        <LoveNoteComposer
+          open={noteOpen}
+          onOpenChange={setNoteOpen}
+          toName={partnerName}
+          onSend={sendLoveNote}
+          sending={sendingNote}
         />
       )}
     </AppFrame>
@@ -563,7 +649,7 @@ function InviteStrip({ spaceId }: { spaceId: string }) {
         />
       </div>
       <div className="flex gap-2">
-        <EmberButton size="sm" onClick={send} loading={busy} disabled={!email.trim()}>Send</EmberButton>
+        <PrimaryButton size="sm" onClick={send} loading={busy} disabled={!email.trim()}>Send</PrimaryButton>
         <GhostButton onClick={() => setOpen(false)}>Not now</GhostButton>
       </div>
     </div>

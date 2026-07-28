@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
 import { toLocalInput, fromLocalInput, EVENT_COLORS, RECURRENCE_OPTIONS, type Recurrence } from "@/lib/calendar-utils";
+import { MILESTONE_TYPES, milestoneMeta, type MilestoneKind } from "@/lib/milestones";
 import { Trash2, Loader2, MapPin, Repeat, ChevronDown, Check, HelpCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserAvatar, type ProfileLike } from "./user-avatar";
@@ -43,6 +44,7 @@ export type EventDraft = {
   recurrence: Recurrence;
   recurrence_until: string | null; // ISO date or null
   recurrence_exdates: string[];
+  milestone: MilestoneKind | null;
   occurrence_date?: string | null; // the clicked occurrence (for single-occurrence delete)
 };
 
@@ -82,6 +84,25 @@ export function EventDialog({
   const isRecurring = draft.recurrence !== "none";
   const isExistingRecurring = !!initial.id && initial.recurrence !== "none";
 
+  // Marking something a milestone *is* the shorthand for "all-day, every year,
+  // forever" — so we set that up rather than making the couple hand-configure it.
+  function pickMilestone(kind: MilestoneKind | null) {
+    setDraft((d) => {
+      if (!kind) return { ...d, milestone: null };
+      const end = new Date(d.start_at);
+      end.setHours(23, 59, 59, 999);
+      return {
+        ...d,
+        milestone: kind,
+        all_day: true,
+        recurrence: "yearly",
+        recurrence_until: null,
+        end_at: end.toISOString(),
+        color: d.color ?? milestoneMeta(kind)!.color,
+      };
+    });
+  }
+
   const showRsvp = !!initial.id && !!onRsvp && !!members && members.length > 0;
 
   return (
@@ -102,11 +123,57 @@ export function EventDialog({
               id="title"
               value={draft.title}
               onChange={(e) => update("title", e.target.value)}
-              placeholder="Coffee with Sam"
+              placeholder={milestoneMeta(draft.milestone)?.placeholder ?? "Coffee with Sam"}
               maxLength={200}
               disabled={!canEdit}
               autoFocus
             />
+          </div>
+
+          <div>
+            <Label>Milestone</Label>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => pickMilestone(null)}
+                disabled={!canEdit}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-all active:scale-95",
+                  !draft.milestone
+                    ? "bg-hearth/12 text-foreground ring-1 ring-hearth/35"
+                    : "bg-secondary/70 text-muted-foreground hover:bg-secondary",
+                )}
+              >
+                Not a milestone
+              </button>
+              {MILESTONE_TYPES.map((m) => {
+                const Icon = m.icon;
+                const active = draft.milestone === m.key;
+                return (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => pickMilestone(m.key)}
+                    disabled={!canEdit}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all active:scale-95",
+                      active
+                        ? "bg-hearth/12 text-foreground ring-1 ring-hearth/35"
+                        : "bg-secondary/70 text-muted-foreground hover:bg-secondary",
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" style={active ? { color: m.color } : undefined} />
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+            {draft.milestone && (
+              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                Set the date to the <strong className="font-medium text-foreground">original</strong> one —
+                the wedding, the birth, the first date. It repeats every year, and Hearth counts the years for you.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

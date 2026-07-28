@@ -28,7 +28,7 @@ export const DESTINATIONS: Destination[] = [
   { to: "/today", label: "Today", icon: Home, description: "Your dashboard" },
   { to: "/calendar", label: "Calendar", icon: CalendarDays, description: "Plan together" },
   { to: "/memories", label: "Memories", icon: Heart, description: "What you've kept" },
-  { to: "/together", label: "Together", icon: Users, description: "Lists & goals" },
+  { to: "/together", label: "Together", icon: Users, description: "Shared lists" },
 ];
 
 export function useTheme() {
@@ -87,7 +87,7 @@ export function ProfileMenu({ userId, align = "end" }: { userId: string; align?:
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={(e) => { e.preventDefault(); toggle(); }}>
           {dark ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
-          {dark ? "Light mode" : "Dark mode"}
+          {dark ? "Morning" : "Evening"}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={signOut}>
           <LogOut className="mr-2 h-4 w-4" />Sign out
@@ -332,6 +332,7 @@ export function AppShell({ userId, children }: { userId: string; children: React
         open={quickAddOpen}
         onOpenChange={setQuickAddOpen}
         onAnswerQuestion={() => navigate({ to: "/today", search: { compose: true } })}
+        onLoveNote={() => navigate({ to: "/today", search: { note: true } })}
       />
     </div>
   );

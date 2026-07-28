@@ -400,7 +400,7 @@ function WelcomePage() {
                           type="checkbox"
                           checked={row.yearly}
                           onChange={(e) => updateRow(i, { yearly: e.target.checked })}
-                          className="h-3.5 w-3.5 accent-[var(--color-primary)]"
+                          className="h-3.5 w-3.5 accent-[var(--primary)]"
                         />
                         every year
                       </label>
@@ -529,7 +529,7 @@ function ProgressDots({ count, current }: { count: number; current: number }) {
           key={i}
           className={cn(
             "h-1.5 rounded-full transition-all duration-500",
-            i === current ? "w-8 bg-primary shadow-[0_0_12px_var(--color-primary)]" : i < current ? "w-3 bg-primary/50" : "w-3 bg-border",
+            i === current ? "w-8 bg-primary shadow-[0_0_12px_var(--primary)]" : i < current ? "w-3 bg-primary/50" : "w-3 bg-border",
           )}
         />
       ))}
