@@ -4,16 +4,24 @@ import { createPortal } from "react-dom";
 import { MapPin, X } from "lucide-react";
 import { Overline } from "@/components/hearth";
 import { UserAvatar, type ProfileLike } from "@/components/calendar/user-avatar";
+import { AddToCollectionMenu } from "./add-to-collection-menu";
 import { moodMeta } from "@/lib/prompts";
+import type { Collection } from "@/lib/collections";
 import type { Moment } from "./memory-card";
 
 export function MemoryDetailSheet({
   moment,
   who,
+  collections,
+  spaceId,
+  userId,
   onClose,
 }: {
   moment: Moment | null;
   who?: ProfileLike;
+  collections: Collection[];
+  spaceId: string;
+  userId: string;
   onClose: () => void;
 }) {
   const reduced = useReducedMotion();
@@ -40,6 +48,9 @@ export function MemoryDetailSheet({
           key={moment.id}
           moment={moment}
           who={who}
+          collections={collections}
+          spaceId={spaceId}
+          userId={userId}
           onClose={onClose}
           reduced={!!reduced}
         />
@@ -52,11 +63,17 @@ export function MemoryDetailSheet({
 function MemoryDetailModal({
   moment,
   who,
+  collections,
+  spaceId,
+  userId,
   onClose,
   reduced,
 }: {
   moment: Moment;
   who?: ProfileLike;
+  collections: Collection[];
+  spaceId: string;
+  userId: string;
   onClose: () => void;
   reduced: boolean;
 }) {
@@ -156,11 +173,14 @@ function MemoryDetailModal({
                 </p>
                 <p className="text-xs text-muted-foreground">Kept this memory</p>
               </div>
-              {mood && (
-                <span className="memory-mood-pill ml-auto text-xs" title={mood.label}>
-                  {mood.emoji} {mood.label}
-                </span>
-              )}
+              <div className="ml-auto flex items-center gap-2">
+                {mood && (
+                  <span className="memory-mood-pill text-xs" title={mood.label}>
+                    {mood.emoji} {mood.label}
+                  </span>
+                )}
+                <AddToCollectionMenu moment={moment} collections={collections} spaceId={spaceId} userId={userId} />
+              </div>
             </div>
           </div>
         </div>

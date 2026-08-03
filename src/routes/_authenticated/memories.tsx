@@ -14,10 +14,13 @@ import { MemoriesHero, MemoryFilterBar } from "@/components/memories/memories-he
 import { MemoriesTimeline } from "@/components/memories/memories-timeline";
 import { OnThisDaySpotlight } from "@/components/memories/on-this-day-spotlight";
 import { ScrapbookView } from "@/components/memories/scrapbook-view";
+import { CollectionsView } from "@/components/memories/collections-view";
+import { CollectionFormSheet } from "@/components/memories/collection-form-sheet";
 import { ViewSwitcher, useMemoryView } from "@/components/memories/view-switcher";
 import type { Moment } from "@/components/memories/memory-card";
 import type { MemoryView } from "@/components/memories/view-switcher";
 import type { ProfileLike } from "@/components/calendar/user-avatar";
+import type { Collection } from "@/lib/collections";
 import { toast } from "sonner";
 import {
   Heart,
@@ -51,7 +54,13 @@ function MemoriesPage() {
   const [personFilter, setPersonFilter] = useState<string | null>(null);
   const [photosOnly, setPhotosOnly] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [openCollectionId, setOpenCollectionId] = useState<string | null>(null);
+  const [collectionFormOpen, setCollectionFormOpen] = useState(false);
+  const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
   useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    if (view !== "collections") setOpenCollectionId(null);
+  }, [view]);
 
   const momentsQ = useQuery({
     queryKey: ["thread", space?.id],
@@ -69,6 +78,25 @@ function MemoriesPage() {
   });
 
   const moments = momentsQ.data ?? [];
+  const momentById = useMemo(
+    () => Object.fromEntries(moments.map((m) => [m.id, m])),
+    [moments],
+  );
+
+  const collectionsQ = useQuery({
+    queryKey: ["collections", space?.id],
+    enabled: !!space,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("collections")
+        .select("*")
+        .eq("calendar_id", space!.id)
+        .order("updated_at", { ascending: false });
+      if (error) throw error;
+      return data as Collection[];
+    },
+  });
+  const collections = collectionsQ.data ?? [];
 
   const filtered = useMemo(
     () =>
@@ -98,16 +126,36 @@ function MemoriesPage() {
   }, [filtered]);
 
   const hasMoments = moments.length > 0;
+  const hasCollections = collections.length > 0;
+  const showViewSwitcher = hasMoments || hasCollections;
   const noResults = hasMoments && filtered.length === 0;
+
+  function openCreateCollectionForm() {
+    setEditingCollection(null);
+    setCollectionFormOpen(true);
+  }
+
+  function openEditCollectionForm(c: Collection) {
+    setEditingCollection(c);
+    setCollectionFormOpen(true);
+  }
 
   const headerAction = space ? (
     <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-      {hasMoments && <ViewSwitcher view={view} onChange={setView} />}
-      <Button onClick={() => setComposing(true)} className="gap-1.5 rounded-full">
-        <Plus className="h-4 w-4" />
-        <span className="hidden sm:inline">Add memory</span>
-        <span className="sm:hidden">Add</span>
-      </Button>
+      {showViewSwitcher && <ViewSwitcher view={view} onChange={setView} />}
+      {view === "collections" ? (
+        <Button onClick={openCreateCollectionForm} className="gap-1.5 rounded-full">
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Add collection</span>
+          <span className="sm:hidden">Add</span>
+        </Button>
+      ) : (
+        <Button onClick={() => setComposing(true)} className="gap-1.5 rounded-full">
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Add memory</span>
+          <span className="sm:hidden">Add</span>
+        </Button>
+      )}
     </div>
   ) : undefined;
 
@@ -125,20 +173,21 @@ function MemoriesPage() {
         </div>
       )}
 
-      {!momentsQ.isLoading && (
+      {!momentsQ.isLoading && !openCollectionId && (
         <MemoriesHero
           moments={moments}
           members={members}
           spaceName={space?.name}
           action={headerAction}
+          collectionCount={collections.length}
         />
       )}
 
-      {momentsQ.isSuccess && !hasMoments && (
+      {momentsQ.isSuccess && !hasMoments && view !== "collections" && (
         <PremiumEmpty onAdd={() => setComposing(true)} />
       )}
 
-      {hasMoments && (
+      {hasMoments && view !== "collections" && (
         <MemoryFilterBar
           members={members}
           userId={user.id}
@@ -159,7 +208,7 @@ function MemoriesPage() {
         </motion.p>
       )}
 
-      {hasMoments && !noResults && (
+      {(hasMoments || hasCollections) && !noResults && (
         <MemoryViewPanel
           view={view}
           mounted={mounted}
@@ -168,12 +217,23 @@ function MemoriesPage() {
           filtered={filtered}
           profileById={profileById}
           onSelect={setSelected}
+          collections={collections}
+          momentById={momentById}
+          spaceId={space?.id}
+          userId={user.id}
+          openCollectionId={openCollectionId}
+          onOpenCollectionChange={setOpenCollectionId}
+          onCreateCollection={openCreateCollectionForm}
+          onEditCollection={openEditCollectionForm}
         />
       )}
 
       <MemoryDetailSheet
         moment={selected}
         who={selected ? profileById[selected.created_by] : undefined}
+        collections={collections}
+        spaceId={space?.id ?? ""}
+        userId={user.id}
         onClose={() => setSelected(null)}
       />
 
@@ -183,6 +243,16 @@ function MemoriesPage() {
           onOpenChange={setComposing}
           spaceId={space.id}
           userId={user.id}
+        />
+      )}
+
+      {space && (
+        <CollectionFormSheet
+          open={collectionFormOpen}
+          onOpenChange={setCollectionFormOpen}
+          spaceId={space.id}
+          userId={user.id}
+          collection={editingCollection}
         />
       )}
     </AppFrame>
@@ -197,6 +267,14 @@ function MemoryViewPanel({
   filtered,
   profileById,
   onSelect,
+  collections,
+  momentById,
+  spaceId,
+  userId,
+  openCollectionId,
+  onOpenCollectionChange,
+  onCreateCollection,
+  onEditCollection,
 }: {
   view: MemoryView;
   mounted: boolean;
@@ -205,7 +283,32 @@ function MemoryViewPanel({
   filtered: Moment[];
   profileById: Record<string, ProfileLike>;
   onSelect: (m: Moment) => void;
+  collections: Collection[];
+  momentById: Record<string, Moment>;
+  spaceId: string | undefined;
+  userId: string;
+  openCollectionId: string | null;
+  onOpenCollectionChange: (id: string | null) => void;
+  onCreateCollection: () => void;
+  onEditCollection: (c: Collection) => void;
 }) {
+  if (view === "collections") {
+    return spaceId ? (
+      <CollectionsView
+        collections={collections}
+        momentById={momentById}
+        profileById={profileById}
+        spaceId={spaceId}
+        userId={userId}
+        onSelectMoment={onSelect}
+        openCollectionId={openCollectionId}
+        onOpenCollectionChange={onOpenCollectionChange}
+        onCreateCollection={onCreateCollection}
+        onEditCollection={onEditCollection}
+      />
+    ) : null;
+  }
+
   if (view === "timeline") {
     return (
       <>

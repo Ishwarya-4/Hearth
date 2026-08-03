@@ -117,9 +117,9 @@ function TogetherPage() {
       />
 
       {listsQ.isLoading && (
-        <div className="grid items-start gap-4 sm:grid-cols-2" aria-busy="true">
-          <Skeleton className="h-52 rounded-xl" />
-          <Skeleton className="h-52 rounded-xl" />
+        <div className="columns-1 gap-4 sm:columns-2 [column-fill:_balance]" aria-busy="true">
+          <Skeleton className="mb-4 h-52 rounded-xl" />
+          <Skeleton className="mb-4 h-52 rounded-xl" />
         </div>
       )}
 
@@ -147,17 +147,18 @@ function TogetherPage() {
         </div>
       )}
 
-      <div className="grid items-start gap-4 sm:grid-cols-2">
+      <div className="columns-1 gap-4 sm:columns-2 [column-fill:_balance]">
         {lists.map((list) => (
-          <ListCard
-            key={list.id}
-            list={list}
-            items={itemsByList[list.id] ?? []}
-            onAdd={(body) => addItem(list.id, body)}
-            onToggle={toggleItem}
-            onDeleteItem={deleteItem}
-            onDeleteList={() => deleteList(list.id)}
-          />
+          <div key={list.id} className="mb-4 break-inside-avoid">
+            <ListCard
+              list={list}
+              items={itemsByList[list.id] ?? []}
+              onAdd={(body) => addItem(list.id, body)}
+              onToggle={toggleItem}
+              onDeleteItem={deleteItem}
+              onDeleteList={() => deleteList(list.id)}
+            />
+          </div>
         ))}
       </div>
     </AppFrame>

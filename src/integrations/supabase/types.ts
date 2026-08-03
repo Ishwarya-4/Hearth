@@ -344,6 +344,101 @@ export type Database = {
           },
         ];
       };
+      collections: {
+        Row: {
+          calendar_id: string;
+          cover_url: string | null;
+          created_at: string;
+          created_by: string;
+          description: string | null;
+          ends_on: string | null;
+          id: string;
+          starts_on: string | null;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          calendar_id: string;
+          cover_url?: string | null;
+          created_at?: string;
+          created_by: string;
+          description?: string | null;
+          ends_on?: string | null;
+          id?: string;
+          starts_on?: string | null;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          calendar_id?: string;
+          cover_url?: string | null;
+          created_at?: string;
+          created_by?: string;
+          description?: string | null;
+          ends_on?: string | null;
+          id?: string;
+          starts_on?: string | null;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "collections_calendar_id_fkey";
+            columns: ["calendar_id"];
+            isOneToOne: false;
+            referencedRelation: "calendars";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      collection_items: {
+        Row: {
+          caption: string | null;
+          collection_id: string;
+          created_at: string;
+          created_by: string;
+          id: string;
+          moment_id: string | null;
+          photo_url: string | null;
+          position: number;
+        };
+        Insert: {
+          caption?: string | null;
+          collection_id: string;
+          created_at?: string;
+          created_by: string;
+          id?: string;
+          moment_id?: string | null;
+          photo_url?: string | null;
+          position?: number;
+        };
+        Update: {
+          caption?: string | null;
+          collection_id?: string;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          moment_id?: string | null;
+          photo_url?: string | null;
+          position?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "collection_items_collection_id_fkey";
+            columns: ["collection_id"];
+            isOneToOne: false;
+            referencedRelation: "collections";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "collection_items_moment_id_fkey";
+            columns: ["moment_id"];
+            isOneToOne: false;
+            referencedRelation: "moments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;

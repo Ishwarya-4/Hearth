@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from "framer-motion";
-import { Camera, MapPin, Sparkles } from "lucide-react";
+import { Album, Camera, MapPin, Sparkles } from "lucide-react";
 import { UserAvatar, type ProfileLike } from "@/components/calendar/user-avatar";
 import { cn } from "@/lib/utils";
 import type { Moment } from "./memory-card";
@@ -17,12 +17,14 @@ export function MemoriesHero({
   spaceName,
   onAdd,
   action,
+  collectionCount = 0,
 }: {
   moments: Moment[];
   members: ProfileLike[];
   spaceName?: string;
   onAdd?: () => void;
   action?: React.ReactNode;
+  collectionCount?: number;
 }) {
   const reduced = useReducedMotion();
   const count = moments.length;
@@ -65,19 +67,26 @@ export function MemoriesHero({
               : "Photos, notes, and the small true things worth returning to."}
           </p>
 
-          {count > 0 && (
+          {(count > 0 || collectionCount > 0) && (
             <motion.div
               className="mt-6 flex flex-wrap gap-2.5"
               initial={reduced ? {} : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
             >
-              <StatPill label="Kept" value={count} />
+              {count > 0 && <StatPill label="Kept" value={count} />}
               {photoCount > 0 && (
                 <StatPill label="Photos" value={photoCount} icon={<Camera className="h-3.5 w-3.5" />} />
               )}
               {placeCount > 0 && (
                 <StatPill label="Places" value={placeCount} icon={<MapPin className="h-3.5 w-3.5" />} />
+              )}
+              {collectionCount > 0 && (
+                <StatPill
+                  label="Collections"
+                  value={collectionCount}
+                  icon={<Album className="h-3.5 w-3.5" />}
+                />
               )}
             </motion.div>
           )}

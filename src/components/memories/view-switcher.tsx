@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, LayoutGrid, Map as MapIcon } from "lucide-react";
+import { Album, Clock, LayoutGrid, Map as MapIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type MemoryView = "timeline" | "scrapbook" | "map";
+export type MemoryView = "timeline" | "scrapbook" | "map" | "collections";
 
 const STORAGE_KEY = "hearth.memories.view";
 
@@ -11,6 +11,7 @@ const VIEWS: { key: MemoryView; label: string; icon: typeof Clock }[] = [
   { key: "timeline", label: "Timeline", icon: Clock },
   { key: "scrapbook", label: "Scrapbook", icon: LayoutGrid },
   { key: "map", label: "Map", icon: MapIcon },
+  { key: "collections", label: "Collections", icon: Album },
 ];
 
 function readSavedView(): MemoryView {
