@@ -347,6 +347,7 @@ export type Database = {
       collections: {
         Row: {
           calendar_id: string;
+          cover_mode: string;
           cover_url: string | null;
           created_at: string;
           created_by: string;
@@ -359,6 +360,7 @@ export type Database = {
         };
         Insert: {
           calendar_id: string;
+          cover_mode?: string;
           cover_url?: string | null;
           created_at?: string;
           created_by: string;
@@ -371,6 +373,7 @@ export type Database = {
         };
         Update: {
           calendar_id?: string;
+          cover_mode?: string;
           cover_url?: string | null;
           created_at?: string;
           created_by?: string;

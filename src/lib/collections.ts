@@ -4,25 +4,29 @@ import type { Database } from "@/integrations/supabase/types";
 
 export type Collection = Database["public"]["Tables"]["collections"]["Row"];
 export type CollectionItem = Database["public"]["Tables"]["collection_items"]["Row"];
+export type CoverMode = "static" | "slideshow" | "none";
 
 export async function createCollection(
   spaceId: string,
   userId: string,
   opts: {
     title: string;
+    coverMode?: CoverMode;
     coverFile?: File | null;
     startsOn?: string | null;
     endsOn?: string | null;
     description?: string | null;
   },
 ): Promise<string> {
-  const coverUrl = opts.coverFile ? await uploadMemoryPhoto(spaceId, opts.coverFile) : null;
+  const coverMode = opts.coverMode ?? "static";
+  const coverUrl = coverMode === "static" && opts.coverFile ? await uploadMemoryPhoto(spaceId, opts.coverFile) : null;
   const { data, error } = await supabase
     .from("collections")
     .insert({
       calendar_id: spaceId,
       created_by: userId,
       title: opts.title.trim(),
+      cover_mode: coverMode,
       cover_url: coverUrl,
       starts_on: opts.startsOn || null,
       ends_on: opts.endsOn || null,
@@ -44,6 +48,7 @@ export async function updateCollection(
   collectionId: string,
   opts: {
     title: string;
+    coverMode: CoverMode;
     coverFile?: File | null;
     removeCover?: boolean;
     startsOn?: string | null;
@@ -53,11 +58,14 @@ export async function updateCollection(
 ): Promise<void> {
   const patch: Database["public"]["Tables"]["collections"]["Update"] = {
     title: opts.title.trim(),
+    cover_mode: opts.coverMode,
     starts_on: opts.startsOn || null,
     ends_on: opts.endsOn || null,
     description: opts.description?.trim() || null,
   };
-  if (opts.coverFile) {
+  if (opts.coverMode !== "static") {
+    patch.cover_url = null;
+  } else if (opts.coverFile) {
     patch.cover_url = await uploadMemoryPhoto(spaceId, opts.coverFile);
   } else if (opts.removeCover) {
     patch.cover_url = null;
@@ -66,16 +74,16 @@ export async function updateCollection(
   if (error) throw error;
 }
 
-/** Sets the collection's cover to `photoUrl` only if it doesn't have one yet, and always touches updated_at. */
+/** In "static" mode, sets the collection's cover to `photoUrl` only if it doesn't have one yet. Always touches updated_at. */
 async function bumpCoverIfEmpty(collectionId: string, photoUrl: string | null) {
   const patch: { cover_url?: string; updated_at: string } = { updated_at: new Date().toISOString() };
   if (photoUrl) {
     const { data: collection } = await supabase
       .from("collections")
-      .select("cover_url")
+      .select("cover_url, cover_mode")
       .eq("id", collectionId)
       .single();
-    if (!collection?.cover_url) patch.cover_url = photoUrl;
+    if (collection?.cover_mode === "static" && !collection.cover_url) patch.cover_url = photoUrl;
   }
   const { error } = await supabase.from("collections").update(patch).eq("id", collectionId);
   if (error) throw error;

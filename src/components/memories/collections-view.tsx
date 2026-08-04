@@ -61,6 +61,12 @@ export function CollectionsView({
 
   const openCollection = collections.find((c) => c.id === openCollectionId) ?? null;
 
+  function photoUrlsFor(id: string): string[] {
+    return (itemsByCollection[id] ?? [])
+      .map((it) => (it.moment_id ? momentById[it.moment_id]?.photo_url ?? null : it.photo_url))
+      .filter((url): url is string => !!url);
+  }
+
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["collections"] });
     qc.invalidateQueries({ queryKey: ["collection-items"] });
@@ -111,12 +117,13 @@ export function CollectionsView({
   }
 
   return (
-    <div className="columns-2 gap-2.5 sm:columns-3 lg:columns-4 xl:columns-5 [column-fill:_balance]">
+    <div className="columns-2 gap-2.5 sm:columns-3 [column-fill:_balance]">
       {collections.map((c) => (
         <div key={c.id} className="mb-2.5 break-inside-avoid">
           <CollectionCard
             collection={c}
             itemCount={(itemsByCollection[c.id] ?? []).length}
+            photoUrls={photoUrlsFor(c.id)}
             onSelect={() => onOpenCollectionChange(c.id)}
           />
         </div>
